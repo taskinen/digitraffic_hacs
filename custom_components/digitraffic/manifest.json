@@ -1,8 +1,8 @@
 {
   "domain": "digitraffic",
   "name": "Digitraffic Weather Stations",
-  "documentation": "https://github.com/taskinen/hass-digitraffic",
-  "issue_tracker": "https://github.com/taskinen/hass-digitraffic/issues",
+  "documentation": "https://github.com/taskinen/digitraffic_hacs",
+  "issue_tracker": "https://github.com/taskinen/digitraffic_hacs/issues",
   "dependencies": [],
   "codeowners": ["@taskinen"],
   "requirements": ["aiohttp"],
