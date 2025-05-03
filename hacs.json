@@ -1,0 +1,7 @@
+{
+  "name": "Digitraffic",
+  "content_in_root": false,
+  "country": "FI",
+  "render_readme": true,
+  "homeassistant": "2023.1.0"
+}
