@@ -61,18 +61,19 @@ async def validate_station_id(hass, station_id: str) -> dict | None:
                 _LOGGER.warning("Validation failed for station ID %s: 'properties' field missing in response. Data: %s", station_id, data)
                 return None
 
-            tms_number = properties.get("tmsNumber")
-            if tms_number is None:
-                _LOGGER.warning("Validation failed for station ID %s: 'tmsNumber' missing in 'properties'. Data: %s", station_id, data)
+            # Validate using the 'id' field instead of 'tmsNumber'
+            station_id_from_api = properties.get("id")
+            if station_id_from_api is None:
+                _LOGGER.warning("Validation failed for station ID %s: 'id' missing in 'properties'. Data: %s", station_id, data)
                 return None
 
-            # Compare tmsNumber with the integer version of station_id
-            if tms_number == station_id_int:
+            # Compare id from API with the integer version of station_id
+            if station_id_from_api == station_id_int:
                 station_name = properties.get("name", f"Station {station_id}")
                 _LOGGER.info("Successfully validated station ID %s: Name '%s'", station_id, station_name)
                 return {"title": station_name}
             else:
-                _LOGGER.warning("Validation failed for station ID %s: tmsNumber (%s) does not match input ID (%s). Data: %s", station_id, tms_number, station_id_int, data)
+                _LOGGER.warning("Validation failed for station ID %s: Provided ID does not match API ID (%s). Data: %s", station_id, station_id_from_api, data)
                 return None
 
     except asyncio.TimeoutError:
