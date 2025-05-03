@@ -3,6 +3,7 @@ import logging
 import voluptuous as vol
 import aiohttp
 import async_timeout
+import asyncio  # Add asyncio import
 
 from homeassistant import config_entries
 from homeassistant.core import callback
@@ -22,24 +23,66 @@ async def validate_station_id(hass, station_id: str) -> dict | None:
     """Validate the user input allows us to connect."""
     session = async_get_clientsession(hass)
     url = f"{API_ENDPOINT_STATIONS}/{station_id}"
+    _LOGGER.debug("Validating station ID %s using URL: %s", station_id, url)
+
     try:
+        # Ensure station_id is potentially an integer before proceeding
+        try:
+            station_id_int = int(station_id)
+        except ValueError:
+            _LOGGER.error("Station ID '%s' is not a valid integer.", station_id)
+            return None
+
         async with async_timeout.timeout(10):
             response = await session.get(url)
-            response.raise_for_status()
-            data = await response.json()
+            _LOGGER.debug("Received response for station ID %s: Status %s", station_id, response.status)
+
+            if response.status == 404:
+                _LOGGER.error("Station ID %s not found (404).", station_id)
+                return None
+            elif response.status != 200:
+                _LOGGER.error("API request failed for station ID %s with status %s. Response: %s", station_id, response.status, await response.text())
+                response.raise_for_status()  # Raise for other non-200 errors after logging
+
+            # Try parsing JSON
+            try:
+                data = await response.json()
+                _LOGGER.debug("Parsed JSON data for station ID %s: %s", station_id, data)
+            except aiohttp.ContentTypeError:
+                _LOGGER.error("Failed to parse JSON for station ID %s. Response was not valid JSON. Content-Type: %s, Body: %s", station_id, response.content_type, await response.text())
+                return None
+            except ValueError:  # json.JSONDecodeError inherits from ValueError
+                _LOGGER.error("Failed to parse JSON for station ID %s due to invalid JSON format. Body: %s", station_id, await response.text(), exc_info=True)
+                return None
+
             # Check if the response contains expected station data
-            if data and data.get("properties", {}).get("tmsNumber") == int(station_id):
-                return {"title": data.get("properties", {}).get("name", f"Station {station_id}")}
+            properties = data.get("properties")
+            if not properties:
+                _LOGGER.warning("Validation failed for station ID %s: 'properties' field missing in response. Data: %s", station_id, data)
+                return None
+
+            tms_number = properties.get("tmsNumber")
+            if tms_number is None:
+                _LOGGER.warning("Validation failed for station ID %s: 'tmsNumber' missing in 'properties'. Data: %s", station_id, data)
+                return None
+
+            # Compare tmsNumber with the integer version of station_id
+            if tms_number == station_id_int:
+                station_name = properties.get("name", f"Station {station_id}")
+                _LOGGER.info("Successfully validated station ID %s: Name '%s'", station_id, station_name)
+                return {"title": station_name}
             else:
-                return None # Station ID might exist but response format unexpected
-    except (aiohttp.ClientError, asyncio.TimeoutError):
-        _LOGGER.error("Failed to connect or validate station ID %s", station_id, exc_info=True)
+                _LOGGER.warning("Validation failed for station ID %s: tmsNumber (%s) does not match input ID (%s). Data: %s", station_id, tms_number, station_id_int, data)
+                return None
+
+    except asyncio.TimeoutError:
+        _LOGGER.error("Timeout connecting to API for station ID %s at URL %s", station_id, url)
         return None
-    except ValueError:
-         _LOGGER.error("Station ID %s is not a valid integer", station_id)
-         return None # Station ID must be an integer
-    except Exception:
-        _LOGGER.exception("Unexpected error validating station ID %s", station_id)
+    except aiohttp.ClientError as err:
+        _LOGGER.error("Network error validating station ID %s: %s", station_id, err, exc_info=True)
+        return None
+    except Exception as exc:  # Catch broader exceptions
+        _LOGGER.exception("Unexpected error validating station ID %s: %s", station_id, exc)
         return None
 
 class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
