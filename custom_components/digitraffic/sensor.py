@@ -34,7 +34,8 @@ async def async_setup_entry(
     if coordinator.data:
         station_name = coordinator.data.get("stationName", f"Station {station_id}")
         for sensor_key in coordinator.data:
-            if sensor_key in SENSOR_MAP:
+            # Create sensors for all keys except metadata
+            if sensor_key not in ["measuredTime", "stationName"]:
                 sensors.append(
                     DigitrafficWeatherSensor(
                         coordinator,
@@ -43,8 +44,6 @@ async def async_setup_entry(
                         sensor_key,
                     )
                 )
-            elif sensor_key not in ["measuredTime", "stationName"]:
-                 _LOGGER.warning("Unknown sensor type '%s' found for station %s. Add it to SENSOR_MAP in const.py if needed.", sensor_key, station_id)
 
     async_add_entities(sensors, True)
 
@@ -53,9 +52,9 @@ class DigitrafficWeatherSensor(CoordinatorEntity[DigitrafficDataUpdateCoordinato
     """Representation of a Digitraffic Weather Sensor."""
 
     def __init__(
-        self, 
-        coordinator: DigitrafficDataUpdateCoordinator, 
-        station_id: str, 
+        self,
+        coordinator: DigitrafficDataUpdateCoordinator,
+        station_id: str,
         station_name: str,
         sensor_key: str
     ):
@@ -63,8 +62,10 @@ class DigitrafficWeatherSensor(CoordinatorEntity[DigitrafficDataUpdateCoordinato
         super().__init__(coordinator)
         self._station_id = station_id
         self._sensor_key = sensor_key
+        # Get config if available, otherwise use empty dict (defaults will apply)
         self._config = SENSOR_MAP.get(self._sensor_key, {})
 
+        # Use specific name from SENSOR_MAP if defined, otherwise generate from key
         self._attr_name = f"{station_name} {self._config.get('name', sensor_key.replace('_', ' ').title())}"
         self._attr_unique_id = f"digitraffic_{self._station_id}_{self._sensor_key}"
         self._attr_device_class = self._config.get("device_class")
