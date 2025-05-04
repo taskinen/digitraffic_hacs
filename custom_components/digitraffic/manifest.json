@@ -1,6 +1,6 @@
 {
   "domain": "digitraffic",
-  "name": "Digitraffic Weather Stations",
+  "name": "Digitraffic",
   "documentation": "https://github.com/taskinen/digitraffic_hacs",
   "issue_tracker": "https://github.com/taskinen/digitraffic_hacs/issues",
   "dependencies": [],
