@@ -32,7 +32,8 @@ async def async_setup_entry(
 
     sensors = []
     if coordinator.data:
-        station_name = coordinator.data.get("stationName", f"Station {station_id}")
+        # Use the title from the config entry, which holds the validated station name
+        station_name = entry.title
         for sensor_key in coordinator.data:
             # Create sensors for all keys except metadata
             if sensor_key not in ["measuredTime", "stationName"]:
