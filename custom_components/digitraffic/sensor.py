@@ -72,9 +72,7 @@ class DigitrafficWeatherSensor(CoordinatorEntity[DigitrafficDataUpdateCoordinato
         self._attr_device_class = self._config.get("device_class")
         self._attr_native_unit_of_measurement = self._config.get("unit")
         self._attr_icon = self._config.get("icon")
-        self._attr_state_class = (
-            SensorStateClass.MEASUREMENT if self._attr_native_unit_of_measurement else None
-        )
+        self._attr_state_class = self._config.get("state_class")
         # Link sensor to device
         self._attr_device_info = {
             "identifiers": {(DOMAIN, self._station_id)},
@@ -86,14 +84,14 @@ class DigitrafficWeatherSensor(CoordinatorEntity[DigitrafficDataUpdateCoordinato
 
     @property
     def native_value(self) -> Any | None:
-        """Return the state of the sensor."""
+        """Return the state of the sensor as a float if possible."""
         if self.coordinator.data and self._sensor_key in self.coordinator.data:
             value = self.coordinator.data[self._sensor_key]
             # Attempt to convert to float if possible (most sensor values are numeric)
             try:
                 return float(value)
             except (ValueError, TypeError):
-                return value # Return as string if not numeric
+                return None  # Only return numeric values for statistics
         return None
 
     @property
