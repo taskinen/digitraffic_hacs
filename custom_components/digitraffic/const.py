@@ -12,16 +12,40 @@ API_ENDPOINT_STATIONS = "https://tie.digitraffic.fi/api/weather/v1/stations"
 # Default update interval
 UPDATE_INTERVAL_MINUTES = 5
 
-# Sensor mapping (Example - needs refinement based on actual API data)
+# Sensor mapping to names, units and icons
+# The keys in this dictionary should match the keys in the API response
 SENSOR_MAP = {
-    "AIR_TEMPERATURE": {"name": "Air Temperature", "unit": "°C", "device_class": "temperature", "state_class": "measurement", "icon": "mdi:thermometer"},
-    "ROAD_SURFACE_TEMPERATURE": {"name": "Road Surface Temperature", "unit": "°C", "device_class": "temperature", "state_class": "measurement", "icon": "mdi:thermometer"},
-    "RELATIVE_HUMIDITY": {"name": "Relative Humidity", "unit": "%", "device_class": "humidity", "state_class": "measurement", "icon": "mdi:water-percent"},
-    "WIND_SPEED": {"name": "Wind Speed", "unit": "m/s", "device_class": "wind_speed", "state_class": "measurement", "icon": "mdi:weather-windy"},
-    "WIND_DIRECTION": {"name": "Wind Direction", "unit": "°", "device_class": "wind_direction", "state_class": "measurement", "icon": "mdi:compass-outline"},
-    "AIR_PRESSURE": {"name": "Air Pressure", "unit": "hPa", "device_class": "pressure", "state_class": "measurement", "icon": "mdi:gauge"},
-    "DEW_POINT": {"name": "Dew Point", "unit": "°C", "device_class": "temperature", "state_class": "measurement", "icon": "mdi:thermometer"},
-    "PRECIPITATION_AMOUNT": {"name": "Precipitation Amount", "unit": "mm", "device_class": "precipitation", "state_class": "measurement", "icon": "mdi:weather-rainy"},
-    "SURFACE_WATER_THICKNESS": {"name": "Surface Water Thickness", "unit": "mm", "device_class": "precipitation", "state_class": "measurement", "icon": "mdi:water"},
-    # Add more sensors as needed based on API documentation
+    "ILMA": {"name": "Ilman lämpötila", "unit": "°C", "icon": "mdi:thermometer"},
+    "ILMA_DERIVAATTA": {"name": "Ilman lämpötilan muutos", "unit": "°C/h", "icon": "mdi:thermometer"},
+    "TIE_1": {"name": "Tienpinnan lämpötila 1", "unit": "°C", "icon": "mdi:road-variant"},
+    "TIE_1_DERIVAATTA": {"name": "Tienpinnan lämpötilan muutos 1", "unit": "°C/h", "icon": "mdi:road-variant"},
+    "TIE_2": {"name": "Tienpinnan lämpötila 2", "unit": "°C", "icon": "mdi:road-variant"},
+    "TIE_2_DERIVAATTA": {"name": "Tienpinnan lämpötilan muutos 2", "unit": "°C/h", "icon": "mdi:road-variant"},
+    "MAA_1": {"name": "Maan lämpötila 1", "unit": "°C", "icon": "mdi:shovel"},
+    "MAA_2": {"name": "Maan lämpötila 2", "unit": "°C", "icon": "mdi:shovel"},
+    "KASTEPISTE": {"name": "Kastepiste", "unit": "°C", "icon": "mdi:water"},
+    "JÄÄTYMISPISTE_1": {"name": "Jäätymispiste 1", "unit": "°C", "icon": "mdi:snowflake"},
+    "JÄÄTYMISPISTE_2": {"name": "Jäätymispiste 2", "unit": "°C", "icon": "mdi:snowflake"},
+    "RUNKO_1": {"name": "Tien rungon lämpötila", "unit": "°C", "icon": "mdi:thermometer"},
+    "KESKITUULI": {"name": "Keskituuli", "unit": "m/s", "icon": "mdi:weather-windy"},
+    "MAKSIMITUULI": {"name": "Maksimituuli", "unit": "m/s", "icon": "mdi:weather-windy"},
+    "TUULENSUUNTA": {"name": "Tuulensuunta", "unit": "°", "icon": "mdi:compass-outline"},
+    "ILMANPAINE": {"name": "Ilmanpaine", "unit": "hPa", "icon": "mdi:gauge"},
+    "ILMANPAINE_DERIVAATTA": {"name": "Ilmanpaineen muutos", "unit": "hPa/3h", "icon": "mdi:gauge"},
+    "ILMAN_KOSTEUS": {"name": "Ilman suhteellinen kosteus", "unit": "%", "icon": "mdi:water-percent"},
+    "SADE": {"name": "Sade", "unit": "///", "icon": "mdi:weather-rainy"},
+    "SADE_INTENSITEETTI": {"name": "Sateen intensiteetti", "unit": "mm/h", "icon": "mdi:weather-pouring"},
+    "SADESUMMA": {"name": "Sadesumma", "unit": "mm", "icon": "mdi:weather-rainy"},
+    "SATEEN_OLOMUOTO_PWDXX": {"name": "Sateen olomuoto", "unit": "///", "icon": "mdi:weather-pouring"},
+    "NÄKYVYYS_KM": {"name": "Näkyvyys km", "unit": "km", "icon": "mdi:eye"},
+    "KELI_1": {"name": "Keliluokka 1", "unit": "***", "icon": "mdi:road"},
+    "KELI_2": {"name": "Keliluokka 2", "unit": "***", "icon": "mdi:road"},
+    "VAROITUS_1": {"name": "Varoitustaso 1", "unit": "???", "icon": "mdi:alert"},
+    "VAROITUS_2": {"name": "Varoitustaso 2", "unit": "???", "icon": "mdi:alert"},
+    "JOHTAVUUS_1": {"name": "Johtavuus 1", "unit": "V", "icon": "mdi:flash"},
+    "JOHTAVUUS_2": {"name": "Johtavuus 2", "unit": "V", "icon": "mdi:flash"},
+    "PINTASIGNAALI_1": {"name": "Pintasignaali 1", "unit": "V", "icon": "mdi:flash"},
+    "PINTASIGNAALI_2": {"name": "Pintasignaali 2", "unit": "V", "icon": "mdi:flash"},
+    "JÄÄTAAJUUS_1": {"name": "Jäätaajuus 1", "unit": "Hz", "icon": "mdi:snowflake"},
+    "JÄÄTAAJUUS_2": {"name": "Jäätaajuus 2", "unit": "Hz", "icon": "mdi:snowflake"},
 }
