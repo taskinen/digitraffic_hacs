@@ -87,43 +87,14 @@ class DigitrafficWeatherSensor(CoordinatorEntity[DigitrafficDataUpdateCoordinato
     @property
     def native_value(self) -> Any | None:
         """Return the state of the sensor."""
-        if not self.coordinator.data or self._sensor_key not in self.coordinator.data:
-            return None
-
-        value = self.coordinator.data[self._sensor_key]
-
-        if value is None:  # Explicitly handle if the coordinator itself provides None
-            return None
-
-        # If this sensor is intended for measurements (has a unit and thus state_class MEASUREMENT)
-        if self._attr_state_class == SensorStateClass.MEASUREMENT:
+        if self.coordinator.data and self._sensor_key in self.coordinator.data:
+            value = self.coordinator.data[self._sensor_key]
+            # Attempt to convert to float if possible (most sensor values are numeric)
             try:
                 return float(value)
             except (ValueError, TypeError):
-                _LOGGER.warning(
-                    "Sensor %s (key: %s, unit: %s) is configured for measurement "
-                    "but received non-numeric value: '%s'. Reporting as unavailable for this update.",
-                    self._attr_unique_id,
-                    self._sensor_key,
-                    self._attr_native_unit_of_measurement,
-                    value,
-                )
-                return None  # Return None if conversion fails for a measurement sensor
-        else:
-            # For sensors not configured as SensorStateClass.MEASUREMENT.
-            # These might be textual, or numeric without a specific unit/state_class.
-            if isinstance(value, (int, float)):
-                return float(value) # Ensure it's float if already numeric
-            if isinstance(value, str):
-                try:
-                    # Try to convert string to float if it represents a number
-                    return float(value)
-                except ValueError:
-                    # If it's a string but not a valid float, return the string as is
-                    return value
-            # For other types (e.g. bool), or if value is not str/int/float,
-            # convert to string as a general fallback.
-            return str(value)
+                return value # Return as string if not numeric
+        return None
 
     @property
     def available(self) -> bool:
