@@ -9,6 +9,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import selector
+from homeassistant import data_entry_flow
 
 from .const import DOMAIN, CONF_STATION_ID, API_ENDPOINT_STATIONS
 
@@ -196,6 +197,10 @@ class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         return self.async_create_entry(title=station_info["title"], data=final_data)
                     else:
                         errors["base"] = "invalid_station_id"
+                except data_entry_flow.AbortFlow:
+                    # Station is already configured - show friendly error message
+                    station_name = stations.get(matched_station_id, f"Station {matched_station_id}")
+                    errors["Weather station name or ID"] = f"Station '{station_name}' is already configured in Home Assistant."
                 except ValueError:
                     errors["Weather station name or ID"] = "invalid_station_id_format"
                 except Exception:  # pylint: disable=broad-except
