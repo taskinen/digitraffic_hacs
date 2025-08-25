@@ -13,6 +13,45 @@ from .const import DOMAIN, CONF_STATION_ID, API_ENDPOINT_STATIONS
 
 _LOGGER = logging.getLogger(__name__)
 
+async def fetch_stations(hass) -> dict:
+    """Fetch list of available stations from the API."""
+    session = async_get_clientsession(hass)
+    url = API_ENDPOINT_STATIONS
+    _LOGGER.debug("Fetching stations from URL: %s", url)
+    
+    try:
+        async with async_timeout.timeout(30):
+            response = await session.get(url, headers={"Accept-Encoding": "gzip"})
+            _LOGGER.debug("Received response for stations: Status %s", response.status)
+            
+            if response.status != 200:
+                _LOGGER.error("Failed to fetch stations with status %s. Response: %s", response.status, await response.text())
+                return {}
+                
+            data = await response.json()
+            _LOGGER.debug("Fetched %s stations", len(data.get("features", [])))
+            
+            stations = {}
+            for feature in data.get("features", []):
+                properties = feature.get("properties", {})
+                station_id = properties.get("id")
+                station_name = properties.get("name")
+                
+                if station_id and station_name:
+                    stations[str(station_id)] = station_name
+                    
+            return stations
+            
+    except asyncio.TimeoutError:
+        _LOGGER.error("Timeout fetching stations from API at URL %s", url)
+        return {}
+    except aiohttp.ClientError as err:
+        _LOGGER.error("Network error fetching stations: %s", err, exc_info=True)
+        return {}
+    except Exception as exc:
+        _LOGGER.exception("Unexpected error fetching stations: %s", exc)
+        return {}
+
 DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_STATION_ID): str,
@@ -94,6 +133,26 @@ class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         errors = {}
+        
+        # Fetch available stations for the dropdown
+        stations = await fetch_stations(self.hass)
+        
+        if not stations:
+            errors["base"] = "cannot_connect"
+            # Fallback to the original schema if we can't fetch stations
+            return self.async_show_form(
+                step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            )
+        
+        # Create dynamic schema with station options
+        station_options = {station_id: station_name for station_id, station_name in stations.items()}
+        
+        dynamic_schema = vol.Schema(
+            {
+                vol.Required(CONF_STATION_ID): vol.In(station_options),
+            }
+        )
+        
         if user_input is not None:
             station_id = user_input[CONF_STATION_ID]
             try:
@@ -113,5 +172,5 @@ class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
 
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="user", data_schema=dynamic_schema, errors=errors
         )
