@@ -8,6 +8,7 @@ import asyncio  # Add asyncio import
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import selector
 
 from .const import DOMAIN, CONF_STATION_ID, API_ENDPOINT_STATIONS
 
@@ -144,32 +145,62 @@ class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=DATA_SCHEMA, errors=errors
             )
         
-        # Create dynamic schema with station options
-        station_options = {station_id: station_name for station_id, station_name in stations.items()}
-        
+        # Create a text input schema with helpful description
         dynamic_schema = vol.Schema(
             {
-                vol.Required(CONF_STATION_ID): vol.In(station_options),
+                vol.Required(CONF_STATION_ID, description="Enter station name or partial name to search"): str,
             }
         )
         
         if user_input is not None:
-            station_id = user_input[CONF_STATION_ID]
-            try:
-                # Ensure station_id is an integer before validation
-                int_station_id = int(station_id)
-                station_info = await validate_station_id(self.hass, str(int_station_id))
-                if station_info:
-                    await self.async_set_unique_id(str(int_station_id))
-                    self._abort_if_unique_id_configured()
-                    return self.async_create_entry(title=station_info["title"], data=user_input)
+            search_input = user_input[CONF_STATION_ID].strip()
+            
+            # First try to match by exact station ID if it's numeric
+            matched_station_id = None
+            if search_input.isdigit():
+                if search_input in stations:
+                    matched_station_id = search_input
+            
+            # If no direct ID match, search by station name
+            if not matched_station_id:
+                matching_stations = {}
+                search_lower = search_input.lower()
+                
+                for station_id, station_name in stations.items():
+                    if search_lower in station_name.lower():
+                        matching_stations[station_id] = station_name
+                
+                if len(matching_stations) == 1:
+                    # Exact match found
+                    matched_station_id = list(matching_stations.keys())[0]
+                elif len(matching_stations) > 1:
+                    # Multiple matches - show them to user
+                    match_list = [f"{sid}: {name}" for sid, name in sorted(matching_stations.items(), key=lambda x: x[1])[:10]]
+                    if len(matching_stations) > 10:
+                        match_list.append(f"... and {len(matching_stations) - 10} more")
+                    errors[CONF_STATION_ID] = f"Multiple matches found. Please be more specific:\n" + "\n".join(match_list)
                 else:
-                    errors["base"] = "invalid_station_id"
-            except ValueError:
-                errors[CONF_STATION_ID] = "invalid_station_id_format"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
-                errors["base"] = "unknown"
+                    # No matches found
+                    errors[CONF_STATION_ID] = f"No stations found matching '{search_input}'. Try a different search term."
+            
+            # If we have a matched station, validate it
+            if matched_station_id:
+                try:
+                    int_station_id = int(matched_station_id)
+                    station_info = await validate_station_id(self.hass, str(int_station_id))
+                    if station_info:
+                        await self.async_set_unique_id(str(int_station_id))
+                        self._abort_if_unique_id_configured()
+                        # Update user_input to contain the station ID, not the search term
+                        final_data = {CONF_STATION_ID: matched_station_id}
+                        return self.async_create_entry(title=station_info["title"], data=final_data)
+                    else:
+                        errors["base"] = "invalid_station_id"
+                except ValueError:
+                    errors[CONF_STATION_ID] = "invalid_station_id_format"
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Unexpected exception")
+                    errors["base"] = "unknown"
 
         return self.async_show_form(
             step_id="user", data_schema=dynamic_schema, errors=errors
