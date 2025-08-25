@@ -148,12 +148,12 @@ class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Create a text input schema with helpful description
         dynamic_schema = vol.Schema(
             {
-                vol.Required(CONF_STATION_ID, description="Enter station name or partial name to search"): str,
+                vol.Required("Weather station name or ID", description="Enter station name or partial name to search"): str,
             }
         )
         
         if user_input is not None:
-            search_input = user_input[CONF_STATION_ID].strip()
+            search_input = user_input["Weather station name or ID"].strip()
             
             # First try to match by exact station ID if it's numeric
             matched_station_id = None
@@ -178,10 +178,10 @@ class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     match_list = [f"{sid}: {name}" for sid, name in sorted(matching_stations.items(), key=lambda x: x[1])[:10]]
                     if len(matching_stations) > 10:
                         match_list.append(f"... and {len(matching_stations) - 10} more")
-                    errors[CONF_STATION_ID] = f"Multiple matches found. Please be more specific:\n" + "\n".join(match_list)
+                    errors["Weather station name or ID"] = f"Multiple matches found. Please be more specific:\n" + "\n".join(match_list)
                 else:
                     # No matches found
-                    errors[CONF_STATION_ID] = f"No stations found matching '{search_input}'. Try a different search term."
+                    errors["Weather station name or ID"] = f"No stations found matching '{search_input}'. Try a different search term."
             
             # If we have a matched station, validate it
             if matched_station_id:
@@ -197,7 +197,7 @@ class DigitrafficConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     else:
                         errors["base"] = "invalid_station_id"
                 except ValueError:
-                    errors[CONF_STATION_ID] = "invalid_station_id_format"
+                    errors["Weather station name or ID"] = "invalid_station_id_format"
                 except Exception:  # pylint: disable=broad-except
                     _LOGGER.exception("Unexpected exception")
                     errors["base"] = "unknown"
