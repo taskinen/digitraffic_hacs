@@ -1,0 +1,675 @@
+# CLAUDE.md - Digitraffic Home Assistant Integration
+
+**Last Updated:** 2026-01-02
+
+> **IMPORTANT:** This file must be kept up-to-date whenever significant changes are made to the codebase. Update this file BEFORE committing changes that affect architecture, add new features, modify data flows, or change development patterns.
+
+## Project Overview
+
+This is a Home Assistant custom component that integrates weather data from Fintraffic's (Finnish Transport Infrastructure Agency) Digitraffic API into Home Assistant. It provides real-time road weather station data including temperature, precipitation, road surface conditions, visibility, and more.
+
+### Key Information
+- **Type:** Home Assistant Custom Component (HACS)
+- **Language:** Python 3
+- **Integration Class:** Cloud Polling
+- **Update Interval:** 5 minutes (configurable in `const.py`)
+- **API:** Fintraffic Digitraffic REST API (public, no authentication required)
+- **Repository:** https://github.com/taskinen/digitraffic_hacs
+- **Version:** 0.1.0
+
+## Architecture Overview
+
+### Data Flow
+
+```
+Digitraffic API
+    ↓ (HTTP GET every 5 minutes)
+DigitrafficDataUpdateCoordinator (_async_update_data)
+    ↓ (parses sensorValues array into dict)
+coordinator.data = {"SENSOR_KEY": value, "measuredTime": "...", ...}
+    ↓ (Home Assistant polls coordinator)
+DigitrafficWeatherSensor (native_value property)
+    ↓ (checks if sensor needs translation)
+translate_sensor_value() [if translate=True]
+    ↓ (looks up code in SENSOR_VALUE_TRANSLATIONS)
+Displayed in Home Assistant UI
+```
+
+### Component Structure
+
+```
+custom_components/digitraffic/
+├── __init__.py                 # Integration setup & data coordinator
+├── manifest.json               # Component metadata & dependencies
+├── config_flow.py              # UI configuration flow
+├── const.py                    # Constants, API endpoints, sensor definitions
+├── sensor.py                   # Sensor platform implementation
+├── translations.py             # Sensor value translation mappings (NEW)
+└── brand/                      # Logo and icon assets
+    ├── icon.png
+    └── logo.png
+```
+
+## File Purposes and Key Components
+
+### `__init__.py` - Integration Core
+
+**Purpose:** Entry point for the integration. Manages setup, teardown, and data fetching.
+
+**Key Classes:**
+- `DigitrafficDataUpdateCoordinator`: Inherits from `DataUpdateCoordinator`
+  - Fetches data from API every 5 minutes
+  - Processes JSON response into a flat dictionary
+  - Handles errors and timeouts
+
+**API Data Structure (Response):**
+```json
+{
+  "stationId": 12345,
+  "stationName": "Vantaa",
+  "measuredTime": "2026-01-02T12:00:00Z",
+  "sensorValues": [
+    {"name": "ILMA", "value": -5.2},
+    {"name": "KELI_1", "value": 2},
+    {"name": "VALLITSEVA_SÄÄ", "value": 63}
+  ]
+}
+```
+
+**Processed Data (coordinator.data):**
+```python
+{
+    "ILMA": -5.2,
+    "KELI_1": 2,
+    "VALLITSEVA_SÄÄ": 63,
+    "measuredTime": "2026-01-02T12:00:00Z",
+    "stationName": "Vantaa"
+}
+```
+
+**Important Methods:**
+- `async_setup_entry()`: Creates coordinator and forwards to platforms
+- `async_unload_entry()`: Cleanup on integration removal
+- `_async_update_data()`: Fetches and processes API data
+
+### `manifest.json` - Component Metadata
+
+Defines integration properties:
+- Domain: `digitraffic`
+- Config flow enabled
+- IoT class: `cloud_polling`
+- Dependency: `aiohttp` (HTTP client)
+- Codeowner: @taskinen
+
+### `config_flow.py` - User Configuration
+
+**Purpose:** Handles integration setup via Home Assistant UI.
+
+**Features:**
+- Fetches list of all available weather stations from API
+- Provides search functionality (by name or ID)
+- Validates station ID exists before creating entry
+- Prevents duplicate station configurations (uses unique_id)
+
+**Key Functions:**
+- `fetch_stations()`: Retrieves all stations from `/api/weather/v1/stations` (GeoJSON)
+- `validate_station_id()`: Verifies station exists and is accessible
+- `DigitrafficConfigFlow.async_step_user()`: User interaction flow with search
+
+**API Endpoints Used:**
+- List stations: `https://tie.digitraffic.fi/api/weather/v1/stations` (returns GeoJSON FeatureCollection)
+- Validate station: `https://tie.digitraffic.fi/api/weather/v1/stations/{id}`
+- Get station data: `https://tie.digitraffic.fi/api/weather/v1/stations/{id}/data`
+
+### `const.py` - Constants and Sensor Definitions
+
+**Purpose:** Central location for all constants, API endpoints, and sensor metadata.
+
+**Key Constants:**
+```python
+DOMAIN = "digitraffic"
+PLATFORMS = ["sensor"]
+CONF_STATION_ID = "station_id"
+UPDATE_INTERVAL_MINUTES = 5
+
+# API Endpoints
+API_ENDPOINT_STATIONS = "https://tie.digitraffic.fi/api/weather/v1/stations"
+API_ENDPOINT_STATION_DATA = "https://tie.digitraffic.fi/api/weather/v1/stations/{}/data"
+```
+
+**SENSOR_MAP Structure:**
+Massive dictionary (200+ sensors) mapping sensor keys to metadata:
+```python
+SENSOR_MAP = {
+    "ILMA": {
+        "name": "Ilman lämpötila n. 4 metrin korkeudelta",
+        "unit": "°C",
+        "icon": "mdi:thermometer",
+        "device_class": "temperature",  # Optional: HA device class
+        "state_class": "measurement"     # Optional: HA state class
+    },
+    "KELI_1": {
+        "name": "Keliluokka 1",
+        "icon": "mdi:road",
+        "translate": True  # NEW: Mark sensor for translation
+    },
+    # ... 200+ more sensors
+}
+```
+
+**Sensor Categories:**
+1. Air temperature (ILMA, ILMA_DERIVAATTA, etc.)
+2. Road surface temperature (TIE_1, TIE_2, etc.)
+3. Ground temperature (MAA_1, MAA_2, etc.)
+4. Wind (KESKITUULI, MAKSIMITUULI, TUULENSUUNTA)
+5. Precipitation (SADE, SADESUMMA, SATEEN_OLOMUOTO_PWDXX, etc.)
+6. Visibility (NÄKYVYYS_KM, NÄKYVYYS_M)
+7. Road conditions (KELI_1-4, TIENPINNAN_TILA_1-4)
+8. PWD (Present Weather Detector) status
+9. DSC (Dynamic Surface Condition) sensors
+10. Forecasts (ILMAN_LÄMPÖTILA_ENNUSTE, etc.)
+
+**Important:** Sensors with `"translate": True` flag will have their numeric values translated to human-readable text.
+
+### `sensor.py` - Sensor Platform
+
+**Purpose:** Creates and manages individual sensor entities.
+
+**Key Classes:**
+
+**`DigitrafficWeatherSensor`** - Main sensor entity class
+
+**Initialization (`__init__`):**
+- Retrieves sensor config from `SENSOR_MAP`
+- Sets sensor name, unique_id, icon, unit, device_class
+- **IMPORTANT:** If `translate=True`, sets `state_class=None` (categorical data, not measurements)
+- Links sensor to device (weather station)
+
+**Properties:**
+- `native_value`: Returns sensor state
+  - **If `translate=True`**: Calls `translate_sensor_value()` to convert numeric codes to text
+  - **If `translate=False`**: Converts to float for numeric measurements
+  - Returns `None` for invalid/non-numeric values
+
+- `available`: Sensor is available if coordinator has data and sensor key exists
+
+- `extra_state_attributes`: Additional sensor metadata
+  - `measured_time`: Timestamp from API
+  - `raw_value`: For translated sensors, preserves original numeric value
+
+**Device Info:**
+All sensors from the same station are grouped under a single device:
+- Manufacturer: "Fintraffic"
+- Model: "Road Weather Station"
+- Name: Station name from API or config entry title
+
+### `translations.py` - Sensor Value Translation (NEW)
+
+**Purpose:** Translates numeric sensor codes to human-readable descriptions.
+
+**Added:** 2026-01-02
+
+**Architecture:**
+```python
+SENSOR_VALUE_TRANSLATIONS = {
+    "SENSOR_KEY": {
+        numeric_code: "Human readable description",
+        ...
+    },
+    ...
+}
+
+def translate_sensor_value(sensor_key: str, value: Any) -> Any:
+    """Main translation function"""
+```
+
+**Translation Categories:**
+
+1. **Complete Mappings (verified):**
+   - `VALLITSEVA_SÄÄ`: WMO Code 4680 (0-99) - Present weather from automatic weather stations
+     - Example: 63 → "Rain, heavy continuous"
+     - Example: 71 → "Snow, slight continuous"
+     - Source: https://codes.wmo.int/306/4680
+
+2. **Example Mappings (user should verify):**
+   - `KELI_1-4`: Road condition class (0-7)
+     - 0: Dry, 1: Damp, 2: Wet, 3: Wet snow, 4: Frosty, 5: Partly icy, 6: Icy, 7: Dry snow
+   - `TIENPINNAN_TILA_1-4`: Road surface state (0-5)
+     - 0: Dry, 1: Moist, 2: Wet, 3: Slush, 4: Frost, 5: Ice
+   - `SATEEN_OLOMUOTO_PWDXX`: Precipitation type (Vaisala PWD codes)
+     - 0: No precipitation, 10: Drizzle, 20: Rain, 30: Snow, etc.
+   - Binary sensors: `SADE`, `VALOISAA`, `AURINKOUP` (0/1 values)
+
+3. **Placeholder Mappings (empty, user must fill):**
+   - PWD status codes: `PWD_STATUS`, `PWD_TILA`, `PWD_NÄK_TILA`
+   - Station status: `ASEMAN_STATUS_1/2`, `ANTURIVIKA`
+   - DSC sensors: `DSC_STAT1/2`, `DSC_VASTAANOTTIMEN_PUHTAUS1/2`
+   - Optical sensors: `OPTISEN_ANTURIN_KELI1/2`, `OPTISEN_ANTURIN_VAROITUS1/2`
+   - Fiber sensors: `KUITUVASTE_PIENI_*`, `KUITUVASTE_SUURI_*`
+   - Warning levels: `VAROITUS_1-4`
+
+**Translation Logic:**
+```python
+1. Check if sensor_key has a mapping in SENSOR_VALUE_TRANSLATIONS
+2. If no mapping exists → return raw value
+3. If mapping exists but is empty (placeholder) → return raw value
+4. Try to convert value to int(float(value)) for lookup
+5. If code found in mapping → return translated string
+6. If code not found → return "Unknown (X)" where X is the code
+7. If value is not numeric → return raw value
+```
+
+**Adding New Translations:**
+To add or update translations, edit `translations.py`:
+```python
+# Find the sensor in SENSOR_VALUE_TRANSLATIONS
+"SENSOR_KEY": {
+    0: "Description for code 0",
+    1: "Description for code 1",
+    # Add more codes as you discover them
+}
+```
+
+**Example Sensor Outputs:**
+
+Before translation:
+```
+sensor.vantaa_sateen_olomuoto: "20"
+sensor.vantaa_vallitseva_saa: "63"
+sensor.vantaa_keli_1: "2"
+```
+
+After translation:
+```
+sensor.vantaa_sateen_olomuoto: "Rain"
+sensor.vantaa_vallitseva_saa: "Rain, heavy continuous"
+sensor.vantaa_keli_1: "Wet"
+```
+
+With raw values preserved in attributes:
+```yaml
+sensor.vantaa_sateen_olomuoto:
+  state: "Rain"
+  attributes:
+    raw_value: 20
+    measured_time: "2026-01-02T12:00:00Z"
+```
+
+## API Documentation
+
+### Base URL
+`https://tie.digitraffic.fi/api/weather/v1`
+
+### Endpoints
+
+**1. List All Stations**
+```
+GET /stations
+Returns: GeoJSON FeatureCollection with all weather stations
+```
+
+Response structure:
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [lon, lat]},
+      "properties": {
+        "id": 12345,
+        "name": "Vantaa",
+        "collectionStatus": "GATHERING",
+        "state": "OK",
+        "dataUpdatedTime": "2026-01-02T12:00:00Z"
+      }
+    }
+  ]
+}
+```
+
+**2. Get Station Info**
+```
+GET /stations/{id}
+Returns: Single GeoJSON Feature with station metadata
+```
+
+**3. Get Station Data (Used by Integration)**
+```
+GET /stations/{id}/data
+Returns: Latest sensor readings from the station
+```
+
+Response structure:
+```json
+{
+  "id": 12345,
+  "stationId": 12345,
+  "stationName": "Vantaa",
+  "measuredTime": "2026-01-02T12:00:00Z",
+  "sensorValues": [
+    {
+      "id": 67890,
+      "roadStationId": 12345,
+      "name": "ILMA",
+      "oldName": "ilman lämpötila",
+      "shortName": "ilma",
+      "value": -5.2,
+      "unit": "°C",
+      "timeWindowStart": "2026-01-02T11:55:00Z",
+      "timeWindowEnd": "2026-01-02T12:00:00Z",
+      "measuredTime": "2026-01-02T12:00:00Z"
+    }
+  ]
+}
+```
+
+### API Characteristics
+- **No Authentication Required:** Public API
+- **Rate Limiting:** Not officially documented, but use reasonable intervals (5 minutes default)
+- **Timeout:** 10 seconds (configured in `__init__.py`)
+- **Content-Type:** `application/json`
+- **Compression:** Supports gzip encoding
+- **Reliability:** Generally stable, but implement error handling for network issues
+
+### API Error Handling
+The coordinator handles:
+- `aiohttp.ClientError`: Network/connection errors
+- `asyncio.TimeoutError`: Request timeout (10s)
+- `response.raise_for_status()`: HTTP error codes (404, 500, etc.)
+- `UpdateFailed`: Raised to Home Assistant when data fetch fails
+
+## Sensor Naming Conventions
+
+### Sensor Keys (from API)
+- ALL_CAPS_WITH_UNDERSCORES (e.g., `ILMA`, `TIE_1`, `KELI_2`)
+- Numbers suffix variants (e.g., `TIE_1`, `TIE_2`, `TIE_3`, `TIE_4`)
+- Some have special suffixes:
+  - `_DERIVAATTA`: Rate of change (derivative)
+  - `_ENNUSTE`: Forecast
+  - `_OPT1`, `_OPT2`: Optical sensors
+  - `_PWDXX`: Present Weather Detector
+
+### Sensor Names (displayed in UI)
+- Finnish language descriptions
+- Stored in `SENSOR_MAP["name"]`
+- Combined with station name: `"{station_name} {sensor_name}"`
+- Example: "Vantaa Ilman lämpötila n. 4 metrin korkeudelta"
+
+### Unique IDs
+Format: `digitraffic_{station_id}_{sensor_key}`
+Example: `digitraffic_12345_ILMA`
+
+## Development Patterns and Best Practices
+
+### Adding New Sensor Support
+
+1. **Find the sensor key** from API response
+2. **Add to `SENSOR_MAP` in `const.py`:**
+   ```python
+   "NEW_SENSOR_KEY": {
+       "name": "Finnish description",
+       "unit": "Unit (if applicable)",  # Optional
+       "icon": "mdi:icon-name",
+       "device_class": "temperature",   # Optional, if HA has matching class
+       "state_class": "measurement",    # Optional: "measurement", "total", or None
+       "translate": False  # Set to True if sensor returns codes that need translation
+   }
+   ```
+
+3. **If sensor needs translation (returns numeric codes):**
+   - Set `"translate": True` in SENSOR_MAP
+   - Add mapping to `translations.py`:
+     ```python
+     "NEW_SENSOR_KEY": {
+         0: "Description for code 0",
+         1: "Description for code 1",
+         # ...
+     }
+     ```
+
+### Home Assistant Device Classes
+
+Common device classes used:
+- `temperature`: Temperature sensors (enables correct display)
+- `pressure`: Atmospheric pressure
+- `humidity`: Relative humidity
+- `wind_speed`: Wind sensors
+- `precipitation`: Rain/snow amount
+
+Full list: https://developers.home-assistant.io/docs/core/entity/sensor/#available-device-classes
+
+### State Classes
+
+- `measurement`: Instantaneous values (temperature, wind speed, etc.)
+- `total`: Cumulative values (rain sum, etc.)
+- `total_increasing`: Monotonically increasing totals
+- `None`: Categorical data (road conditions, weather descriptions) - **Required for translated sensors**
+
+**IMPORTANT:** Sensors with `translate=True` MUST have `state_class=None` because translated text values are categorical, not numeric measurements.
+
+### Error Handling Pattern
+
+Always use this pattern for API calls:
+```python
+try:
+    async with async_timeout.timeout(10):
+        response = await session.get(url)
+        response.raise_for_status()
+        data = await response.json()
+        # Process data
+        return processed_data
+except aiohttp.ClientError as err:
+    _LOGGER.error("Error message: %s", err)
+    raise UpdateFailed(f"Error: {err}") from err
+except asyncio.TimeoutError as err:
+    _LOGGER.error("Timeout message")
+    raise UpdateFailed("Timeout") from err
+except Exception as err:
+    _LOGGER.exception("Unexpected error")
+    raise UpdateFailed(f"Unexpected: {err}") from err
+```
+
+### Logging Levels
+
+Use appropriate log levels:
+- `_LOGGER.debug()`: Detailed information, API responses, validation details
+- `_LOGGER.info()`: Important events, successful operations
+- `_LOGGER.warning()`: Unexpected but handled situations
+- `_LOGGER.error()`: Errors that affect functionality
+- `_LOGGER.exception()`: Errors with full stack trace
+
+## Common Tasks
+
+### Update API Endpoint
+1. Edit `const.py`: Update `API_ENDPOINT_*` constants
+2. Test with a real station ID to verify response format
+3. Update data parsing in `__init__.py` if response structure changed
+
+### Change Update Interval
+1. Edit `const.py`: Change `UPDATE_INTERVAL_MINUTES`
+2. Restart Home Assistant or reload integration
+
+### Add Support for New Weather Station Type
+Currently supports road weather stations. To add marine or rail stations:
+1. Create new constant for API endpoint
+2. Might need separate sensor platform or entity types
+3. Consider creating separate integration vs. expanding this one
+
+### Debug API Issues
+
+Enable debug logging in Home Assistant:
+```yaml
+# configuration.yaml
+logger:
+  default: info
+  logs:
+    custom_components.digitraffic: debug
+```
+
+Check logs: Settings → System → Logs → Filter by "digitraffic"
+
+### Test Translation Changes
+
+1. Edit `translations.py` to add/modify mappings
+2. Reload integration: Developer Tools → YAML → Reload "Template entities" or restart HA
+3. Check sensor states update to show new translations
+4. Verify `raw_value` attribute still shows original numeric code
+
+## Known Issues and Limitations
+
+### Current Known Issues
+- **Translation mappings incomplete:** Many sensors have empty placeholder dictionaries in `translations.py`. User must observe sensor values and fill in mappings based on real-world correlation with weather conditions.
+- **No multi-language support:** All sensor names and translations are in Finnish. Could add i18n support in future.
+- **No historical data:** Only fetches latest readings, no history or graphs beyond HA's built-in recorder.
+
+### Limitations
+- **Public API only:** No authentication = can't access restricted data if it exists
+- **5-minute updates:** Faster updates would hit API more frequently (not recommended)
+- **Finnish stations only:** Digitraffic is Finland-specific
+- **Read-only:** No ability to control or configure stations via API
+
+## Testing
+
+### Manual Testing Checklist
+1. Install integration via config flow
+2. Verify station search works
+3. Check that sensors are created (should be 50-100+ sensors depending on station)
+4. Verify sensor values update every 5 minutes
+5. Check translated sensors show text, not numbers
+6. Verify raw_value attribute exists on translated sensors
+7. Test removing and re-adding integration
+8. Verify unique_id prevents duplicate station setup
+
+### Test Station IDs
+Some known station IDs for testing:
+- Check `/api/weather/v1/stations` for current list
+- Look for stations with `"state": "OK"` and `"collectionStatus": "GATHERING"`
+
+### Validation
+```bash
+# Syntax check all Python files
+python3 -m py_compile custom_components/digitraffic/*.py
+
+# Check manifest
+python3 -c "import json; json.load(open('custom_components/digitraffic/manifest.json'))"
+```
+
+## Future Enhancement Ideas
+
+### Potential Features
+1. **Translation improvements:**
+   - Complete all sensor code mappings
+   - Add English translations
+   - User-customizable mappings via config flow
+
+2. **Additional data:**
+   - Road weather forecasts (already in API, not fully utilized)
+   - Weather warnings and alerts
+   - Road condition cameras (separate API endpoint)
+
+3. **Better organization:**
+   - Sensor grouping/categorization
+   - Hide sensors user doesn't want
+   - Custom sensor names via UI
+
+4. **Automation helpers:**
+   - Binary sensors for road conditions (is_icy, is_snowing, etc.)
+   - Template sensors for common use cases
+   - Blueprints for common automations
+
+5. **Performance:**
+   - Selective sensor updates (not all sensors every time)
+   - Conditional polling based on time of day
+   - Caching strategy for rarely-changing metadata
+
+## Resources and References
+
+### Official Documentation
+- **Digitraffic Home:** https://www.digitraffic.fi/en/
+- **Road Traffic API Docs:** https://www.digitraffic.fi/en/road-traffic/
+- **API Swagger UI:** https://tie.digitraffic.fi/swagger/
+
+### External References
+- **WMO Code 4680:** https://codes.wmo.int/306/4680 (Present weather codes)
+- **WMO Code Descriptions:** https://artefacts.ceda.ac.uk/badc_datadocs/surface/code.html
+- **Vaisala PWD Sensors:** https://www.vaisala.com/en/products/weather-environmental-sensors/present-weather-detectors-visbility-sensors-pwd-series
+
+### Home Assistant Development
+- **Integration Development:** https://developers.home-assistant.io/docs/creating_integration_manifest
+- **Sensor Platform:** https://developers.home-assistant.io/docs/core/entity/sensor
+- **Config Flow:** https://developers.home-assistant.io/docs/config_entries_config_flow_handler
+- **Data Update Coordinator:** https://developers.home-assistant.io/docs/integration_fetching_data
+
+### GitHub Repository
+- **Main Repo:** https://github.com/taskinen/digitraffic_hacs
+- **Issues:** https://github.com/taskinen/digitraffic_hacs/issues
+
+## Changelog
+
+### 2026-01-02 - Sensor Value Translation Framework
+**Added:**
+- `translations.py` module with translation mappings
+- Complete WMO 4680 weather code mappings (0-99)
+- Example mappings for Finnish road condition codes
+- `translate_sensor_value()` function
+- `translate` flag support in SENSOR_MAP
+- Raw value preservation in sensor attributes
+- State class handling for categorical vs. measurement sensors
+
+**Modified:**
+- `sensor.py`: Added translation logic to `native_value`, conditional `state_class`, raw value attributes
+- `const.py`: Added `translate: True` flag to 40+ sensors
+
+**Purpose:**
+Converts cryptic numeric sensor codes to human-readable descriptions (e.g., "63" → "Rain, heavy continuous")
+
+---
+
+## Maintenance Instructions
+
+### Keeping CLAUDE.md Updated
+
+**When to update this file:**
+1. **Architecture changes:** New modules, changed data flows, modified patterns
+2. **New features:** Translation system, forecasting, automations, etc.
+3. **API changes:** Endpoint updates, response format changes, new error handling
+4. **Configuration changes:** New constants, modified defaults, changed behavior
+5. **Bug fixes with architectural impact:** Workarounds that change patterns
+6. **Deprecations:** Removed features, changed recommendations
+
+**What to update:**
+- Add entries to **Changelog** section with date and description
+- Update relevant sections (Architecture, File Purposes, Common Tasks, etc.)
+- Update **Last Updated** date at the top
+- Add new examples if patterns change
+- Update Known Issues if bugs are fixed or new ones discovered
+
+**Update workflow:**
+1. Make code changes
+2. Update CLAUDE.md BEFORE committing
+3. Commit both code and documentation together
+4. Reference CLAUDE.md changes in commit message
+
+**Example commit message:**
+```
+Add sensor grouping feature
+
+- Implement sensor category grouping in sensor.py
+- Add SENSOR_CATEGORIES to const.py
+- Update CLAUDE.md with new architecture and usage
+
+See CLAUDE.md changelog for details.
+```
+
+### File Format
+- Use Markdown
+- Keep sections in current order for consistency
+- Use code blocks with language hints (python, json, yaml, bash)
+- Include examples for complex concepts
+- Link to external resources when helpful
+- Keep line length reasonable (80-120 chars) for readability
+
+---
+
+**Remember:** A well-maintained CLAUDE.md makes future development easier for everyone (including AI assistants like me!). Treat it as living documentation that evolves with the codebase.
