@@ -65,14 +65,14 @@ SENSOR_MAP = {
     "ILMAN_KOSTEUS": {"name": "Ilman suhteellinen kosteus", "unit": "%", "icon": "mdi:water-percent"},
     
     # === PRECIPITATION SENSORS ===
-    "SADE": {"name": "Sade", "icon": "mdi:weather-rainy"},
+    "SADE": {"name": "Sade", "icon": "mdi:weather-rainy", "translate": True},
     "SADE I/O": {"name": "Sataa", "icon": "mdi:weather-rainy"},
     "SADE_INTENSITEETTI": {"name": "Sateen intensiteetti", "unit": "mm/h", "icon": "mdi:weather-pouring"},
     "SADESUMMA": {"name": "Sadesumma: nollataan aamulla kello 6.00", "unit": "mm", "icon": "mdi:weather-rainy"},
     "SADESUMMA_LIUKUVA_24H": {"name": "Sadesumma liukuva 24 h", "unit": "mm", "icon": "mdi:weather-rainy"},
-    "SATEEN_OLOMUOTO_PWDXX": {"name": "Sateen olomuoto", "icon": "mdi:weather-pouring"},
-    "SADE_TILA": {"name": "Sateen tila", "icon": "mdi:weather-pouring"},
-    "VALLITSEVA_SÄÄ": {"name": "PWD sääanturin ilmoittama vallitseva sää WMO-luokiteltuna", "icon": "mdi:weather-cloudy"},
+    "SATEEN_OLOMUOTO_PWDXX": {"name": "Sateen olomuoto", "icon": "mdi:weather-pouring", "translate": True},
+    "SADE_TILA": {"name": "Sateen tila", "icon": "mdi:weather-pouring", "translate": True},
+    "VALLITSEVA_SÄÄ": {"name": "PWD sääanturin ilmoittama vallitseva sää WMO-luokiteltuna", "icon": "mdi:weather-cloudy", "translate": True},
     
     # === VISIBILITY SENSORS ===
     "NÄKYVYYS_KM": {"name": "Näkyvyys PWD-sääanturilta mitattuna kilometreissä", "unit": "km", "icon": "mdi:eye"},
@@ -94,20 +94,20 @@ SENSOR_MAP = {
     "AURINGON_IR_SATEILY_ULOS": {"name": "Auringon ir säteily ulospäin", "unit": "W/m2", "icon": "mdi:weather-sunny"},
     "AURINGON_IR_SATEILY_ALAS": {"name": "Auringon ir säteily alaspäin", "unit": "W/m2", "icon": "mdi:weather-sunny"},
     "NETTOSÄTEILY(ANT97)": {"name": "Nettosäteily", "unit": "W/m2", "icon": "mdi:weather-sunny"},
-    "AURINKOUP": {"name": "Aurinko ylhäällä", "icon": "mdi:weather-sunny"},
-    "VALOISAA": {"name": "Valoisaa", "icon": "mdi:brightness-5"},
+    "AURINKOUP": {"name": "Aurinko ylhäällä", "icon": "mdi:weather-sunny", "translate": True},
+    "VALOISAA": {"name": "Valoisaa", "icon": "mdi:brightness-5", "translate": True},
     
     # === ROAD CONDITIONS AND FRICTION SENSORS ===
-    "KELI_1": {"name": "Keliluokka 1", "icon": "mdi:road"},
-    "KELI_2": {"name": "Keliluokka 2", "icon": "mdi:road"},
-    "KELI_3": {"name": "Tiesääaseman päättelemä keliluokka 3. anturilta", "icon": "mdi:road"},
-    "KELI_4": {"name": "Tiesääaseman päättelemä keliluokka 4. anturilta", "icon": "mdi:road"},
-    "TIENPINNAN_TILA_1": {"name": "Tienpinnan tila 1", "icon": "mdi:road"},
-    "TIENPINNAN_TILA_2": {"name": "Tienpinnan tila 2", "icon": "mdi:road"},
-    "TIENPINNAN_TILA_3": {"name": "Tienpinnan tila 3", "icon": "mdi:road"},
-    "TIENPINNAN_TILA_4": {"name": "Tienpinnan tila 4", "icon": "mdi:road"},
-    "TIENPINNAN_TILA_OPT1": {"name": "Tienpinnan tila OPT1", "icon": "mdi:road"},
-    "TIENPINNAN_TILA_OPT2": {"name": "Tienpinnan tila OPT2", "icon": "mdi:road"},
+    "KELI_1": {"name": "Keliluokka 1", "icon": "mdi:road", "translate": True},
+    "KELI_2": {"name": "Keliluokka 2", "icon": "mdi:road", "translate": True},
+    "KELI_3": {"name": "Tiesääaseman päättelemä keliluokka 3. anturilta", "icon": "mdi:road", "translate": True},
+    "KELI_4": {"name": "Tiesääaseman päättelemä keliluokka 4. anturilta", "icon": "mdi:road", "translate": True},
+    "TIENPINNAN_TILA_1": {"name": "Tienpinnan tila 1", "icon": "mdi:road", "translate": True},
+    "TIENPINNAN_TILA_2": {"name": "Tienpinnan tila 2", "icon": "mdi:road", "translate": True},
+    "TIENPINNAN_TILA_3": {"name": "Tienpinnan tila 3", "icon": "mdi:road", "translate": True},
+    "TIENPINNAN_TILA_4": {"name": "Tienpinnan tila 4", "icon": "mdi:road", "translate": True},
+    "TIENPINNAN_TILA_OPT1": {"name": "Tienpinnan tila OPT1", "icon": "mdi:road", "translate": True},
+    "TIENPINNAN_TILA_OPT2": {"name": "Tienpinnan tila OPT2", "icon": "mdi:road", "translate": True},
     "KITKA1": {"name": "Tienpinnan laskennallinen kitka DSC-anturista 1", "unit": "µ", "icon": "mdi:chart-line"},
     "KITKA1_LUKU": {"name": "Tienpinnan laskennallinen kitka DSC-anturista 1. Pelkkä lukuarvo!", "unit": "µ", "icon": "mdi:chart-line"},
     "KITKA2": {"name": "Kitka 2", "unit": "µ", "icon": "mdi:chart-line"},
@@ -138,14 +138,14 @@ SENSOR_MAP = {
     "TURVALLISUUSLÄMPÖ_4": {"name": "Lämpötila, jonka yläpuolella tiellä olevan kosteuden ei pitäisi varmasti jäätyä", "unit": "°C", "icon": "mdi:thermometer-alert"},
     
     # === WARNING AND ALERT SENSORS ===
-    "VAROITUS_1": {"name": "Varoitustaso 1", "icon": "mdi:alert"},
-    "VAROITUS_2": {"name": "Varoitustaso 2", "icon": "mdi:alert"},
-    "VAROITUS_3": {"name": "Tiesääaseman päättelemä varoitustaso 3. anturilta", "icon": "mdi:alert"},
-    "VAROITUS_4": {"name": "Tiesääaseman päättelemä varoitustaso 4. anturilta", "icon": "mdi:alert"},
-    "OPTISEN_ANTURIN_VAROITUS1": {"name": "Optisen DSC-kelianturin 1 päättelemä varoitustaso", "icon": "mdi:alert"},
-    "OPTISEN_ANTURIN_VAROITUS2": {"name": "Optisen anturin varoitus 2", "icon": "mdi:alert-circle-outline"},
-    "OPTISEN_ANTURIN_KELI1": {"name": "Optisen DSC-kelianturin 1 päättelemä keliluokka", "icon": "mdi:road"},
-    "OPTISEN_ANTURIN_KELI2": {"name": "Optisen anturin keli 2", "icon": "mdi:road"},
+    "VAROITUS_1": {"name": "Varoitustaso 1", "icon": "mdi:alert", "translate": True},
+    "VAROITUS_2": {"name": "Varoitustaso 2", "icon": "mdi:alert", "translate": True},
+    "VAROITUS_3": {"name": "Tiesääaseman päättelemä varoitustaso 3. anturilta", "icon": "mdi:alert", "translate": True},
+    "VAROITUS_4": {"name": "Tiesääaseman päättelemä varoitustaso 4. anturilta", "icon": "mdi:alert", "translate": True},
+    "OPTISEN_ANTURIN_VAROITUS1": {"name": "Optisen DSC-kelianturin 1 päättelemä varoitustaso", "icon": "mdi:alert", "translate": True},
+    "OPTISEN_ANTURIN_VAROITUS2": {"name": "Optisen anturin varoitus 2", "icon": "mdi:alert-circle-outline", "translate": True},
+    "OPTISEN_ANTURIN_KELI1": {"name": "Optisen DSC-kelianturin 1 päättelemä keliluokka", "icon": "mdi:road", "translate": True},
+    "OPTISEN_ANTURIN_KELI2": {"name": "Optisen anturin keli 2", "icon": "mdi:road", "translate": True},
     
     # === ELECTRICAL AND TECHNICAL SENSORS ===
     "JOHTAVUUS_1": {"name": "Johtavuus 1", "unit": "V", "icon": "mdi:flash"},
@@ -162,34 +162,34 @@ SENSOR_MAP = {
     "JÄÄTAAJUUS_4": {"name": "Jäätaajuus tienpinta-anturilta 4", "unit": "Hz", "icon": "mdi:snowflake-variant"},
     
     # === FIBER OPTIC SENSORS ===
-    "KUITUVASTE_PIENI_1": {"name": "Pienemmän kuidun vaste, tieanturi 1", "icon": "mdi:chart-bar"},
-    "KUITUVASTE_PIENI_2": {"name": "Kuituvaste pieni 2", "icon": "mdi:chart-bar"},
-    "KUITUVASTE_PIENI_3": {"name": "Pienemmän kuidun vaste, tieanturi 3", "icon": "mdi:chart-bar"},
-    "KUITUVASTE_PIENI_4": {"name": "Pienemmän kuidun vaste, tieanturi 4", "icon": "mdi:chart-bar"},
-    "KUITUVASTE_SUURI_1": {"name": "Suuremman kuidun vaste, tieanturi 1", "icon": "mdi:chart-bar"},
-    "KUITUVASTE_SUURI_2": {"name": "Kuituvaste suuri 2", "icon": "mdi:chart-bar"},
-    "KUITUVASTE_SUURI_3": {"name": "Suuremman kuidun vaste, tieanturi 3", "icon": "mdi:chart-bar"},
-    "KUITUVASTE_SUURI_4": {"name": "Suuremman kuidun vaste, tieanturi 4", "icon": "mdi:chart-bar"},
+    "KUITUVASTE_PIENI_1": {"name": "Pienemmän kuidun vaste, tieanturi 1", "icon": "mdi:chart-bar", "translate": True},
+    "KUITUVASTE_PIENI_2": {"name": "Kuituvaste pieni 2", "icon": "mdi:chart-bar", "translate": True},
+    "KUITUVASTE_PIENI_3": {"name": "Pienemmän kuidun vaste, tieanturi 3", "icon": "mdi:chart-bar", "translate": True},
+    "KUITUVASTE_PIENI_4": {"name": "Pienemmän kuidun vaste, tieanturi 4", "icon": "mdi:chart-bar", "translate": True},
+    "KUITUVASTE_SUURI_1": {"name": "Suuremman kuidun vaste, tieanturi 1", "icon": "mdi:chart-bar", "translate": True},
+    "KUITUVASTE_SUURI_2": {"name": "Kuituvaste suuri 2", "icon": "mdi:chart-bar", "translate": True},
+    "KUITUVASTE_SUURI_3": {"name": "Suuremman kuidun vaste, tieanturi 3", "icon": "mdi:chart-bar", "translate": True},
+    "KUITUVASTE_SUURI_4": {"name": "Suuremman kuidun vaste, tieanturi 4", "icon": "mdi:chart-bar", "translate": True},
     
     # === SYSTEM STATUS AND DIAGNOSTIC SENSORS ===
-    "ASEMAN_STATUS_1": {"name": "Aseman status 1", "icon": "mdi:alert-circle-outline"},
-    "ASEMAN_STATUS_2": {"name": "Aseman status 2", "icon": "mdi:alert-circle-outline"},
-    "ASEMAN_STATUS_OPT1": {"name": "Status1 DSC-anturilta: hälytys, keli", "icon": "mdi:alert-circle-outline"},
-    "ASEMAN_STATUS_OPT2": {"name": "Aseman status OPT2", "icon": "mdi:alert-circle-outline"},
-    "ANTURIVIKA": {"name": "Onko antureissa vikaa?", "icon": "mdi:alert-circle-outline"},
+    "ASEMAN_STATUS_1": {"name": "Aseman status 1", "icon": "mdi:alert-circle-outline", "translate": True},
+    "ASEMAN_STATUS_2": {"name": "Aseman status 2", "icon": "mdi:alert-circle-outline", "translate": True},
+    "ASEMAN_STATUS_OPT1": {"name": "Status1 DSC-anturilta: hälytys, keli", "icon": "mdi:alert-circle-outline", "translate": True},
+    "ASEMAN_STATUS_OPT2": {"name": "Aseman status OPT2", "icon": "mdi:alert-circle-outline", "translate": True},
+    "ANTURIVIKA": {"name": "Onko antureissa vikaa?", "icon": "mdi:alert-circle-outline", "translate": True},
     
     # === PWD (Present Weather Detector) SENSORS ===
-    "PWD_STATUS": {"name": "PWD status", "icon": "mdi:alert-circle-outline"},
-    "PWD_TILA": {"name": "PWD tila", "icon": "mdi:alert-circle-outline"},
-    "PWD_NÄK_TILA": {"name": "PWD näkyvyystila", "icon": "mdi:alert-circle-outline"},
-    "PWD_LÄHETTIMEN_TAKAISINSIRONNAN_MUUTOS": {"name": "PWD takaisinsironnan muutos", "icon": "mdi:signal"},
+    "PWD_STATUS": {"name": "PWD status", "icon": "mdi:alert-circle-outline", "translate": True},
+    "PWD_TILA": {"name": "PWD tila", "icon": "mdi:alert-circle-outline", "translate": True},
+    "PWD_NÄK_TILA": {"name": "PWD näkyvyystila", "icon": "mdi:alert-circle-outline", "translate": True},
+    "PWD_LÄHETTIMEN_TAKAISINSIRONNAN_MUUTOS": {"name": "PWD takaisinsironnan muutos", "icon": "mdi:signal", "translate": True},
     "PWD_VASTAANOTTIMEN_TAKAISINSIRONNAN_MUUTOS": {"name": "PWD:n likaisuusarvoja", "unit": "Hz", "icon": "mdi:signal"},
     
     # === DSC (Dynamic Surface Condition) SENSORS ===
-    "DSC_VASTAANOTTIMEN_PUHTAUS1": {"name": "DSC-anturin status, ykkösten arvojen kertoma tilatieto", "icon": "mdi:alert-circle-outline"},
-    "DSC_VASTAANOTTIMEN_PUHTAUS2": {"name": "DSC vastaanottimen puhtaus 2", "icon": "mdi:alert-circle-outline"},
-    "DSC_STAT1": {"name": "DSC-anturin status, kymppiarvojen kertoma tilatieto", "icon": "mdi:alert-circle-outline"},
-    "DSC_STAT2": {"name": "DSC status 2", "icon": "mdi:alert-circle-outline"},
+    "DSC_VASTAANOTTIMEN_PUHTAUS1": {"name": "DSC-anturin status, ykkösten arvojen kertoma tilatieto", "icon": "mdi:alert-circle-outline", "translate": True},
+    "DSC_VASTAANOTTIMEN_PUHTAUS2": {"name": "DSC vastaanottimen puhtaus 2", "icon": "mdi:alert-circle-outline", "translate": True},
+    "DSC_STAT1": {"name": "DSC-anturin status, kymppiarvojen kertoma tilatieto", "icon": "mdi:alert-circle-outline", "translate": True},
+    "DSC_STAT2": {"name": "DSC status 2", "icon": "mdi:alert-circle-outline", "translate": True},
     
     # === WEATHER FORECAST SENSORS ===
     # Wind Forecast
@@ -198,7 +198,7 @@ SENSOR_MAP = {
     
     # General Weather Forecast
     "PILVISYYS_ENNUSTE": {"name": "Ennustettu pilvisyys taivaankannen kahdeksasosina", "unit": "1/8", "icon": "mdi:weather-cloudy"},
-    "SATEEN_OLOMUOTO_ENNUSTE": {"name": "Ennustettu sateen olomuoto", "icon": "mdi:weather-pouring"},
+    "SATEEN_OLOMUOTO_ENNUSTE": {"name": "Ennustettu sateen olomuoto", "icon": "mdi:weather-pouring", "translate": True},
     "SATEEN_INTENSITEETTI_ENNUSTE": {"name": "Ennustettu sateen intensiteetti vetenä", "unit": "mm/h", "icon": "mdi:weather-pouring"},
     "SATEEN_ESTOD_ENNUSTE": {"name": "Ennustettu sateen todennäköisyys", "unit": "%", "icon": "mdi:weather-pouring"},
     "SADEMÄÄRÄ_1H_ENNUSTE": {"name": "Ennustettu edellisen 1 tunnin sademäärä millimetreinä", "unit": "mm", "icon": "mdi:weather-rainy"},
