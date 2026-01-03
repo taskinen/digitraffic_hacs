@@ -1,6 +1,6 @@
 # CLAUDE.md - Digitraffic Home Assistant Integration
 
-**Last Updated:** 2026-01-03
+**Last Updated:** 2026-01-03 (improved)
 
 ---
 ## ⚠️ CLAUDE CODE: UPDATE CHECKLIST - READ THIS FIRST!
@@ -195,15 +195,26 @@ SENSOR_MAP = {
 
 **Purpose:** Creates and manages individual sensor entities.
 
+**Setup Function (`async_setup_entry`):**
+- Retrieves coordinator from hass.data
+- Calls `coordinator.async_config_entry_first_refresh()` to ensure initial data is loaded
+- **Dynamic sensor discovery:** Iterates through coordinator.data to discover available sensors
+  - Creates sensors for ALL sensor keys returned by API (not just those in SENSOR_MAP)
+  - Sensors not in SENSOR_MAP will use default formatting (key → "Key Name")
+  - Excludes metadata keys: "measuredTime", "stationName"
+- Uses `entry.title` (validated station name from config flow) for display
+- Adds all sensor entities to Home Assistant with immediate update
+
 **Key Classes:**
 
 **`DigitrafficWeatherSensor`** - Main sensor entity class
 
 **Initialization (`__init__`):**
-- Retrieves sensor config from `SENSOR_MAP`
+- Extends `CoordinatorEntity` and `SensorEntity`
+- Retrieves sensor config from `SENSOR_MAP` (uses empty dict if sensor not defined)
 - Sets sensor name, unique_id, icon, unit, device_class
 - **IMPORTANT:** If `translate=True`, sets `state_class=None` (categorical data, not measurements)
-- Links sensor to device (weather station)
+- Links sensor to device (weather station) via device_info
 
 **Properties:**
 - `native_value`: Returns sensor state
@@ -219,9 +230,15 @@ SENSOR_MAP = {
 
 **Device Info:**
 All sensors from the same station are grouped under a single device:
-- Manufacturer: "Fintraffic"
-- Model: "Road Weather Station"
-- Name: Station name from API or config entry title
+```python
+{
+    "identifiers": {(DOMAIN, station_id)},
+    "name": station_name,  # From config entry title
+    "manufacturer": "Fintraffic",
+    "model": "Road Weather Station",
+    "entry_type": "service",  # Indicates this is a service/cloud integration
+}
+```
 
 ### `translations.py` - Sensor Value Translation (NEW)
 
@@ -261,12 +278,14 @@ def translate_sensor_value(sensor_key: str, value: Any) -> Any:
    - Binary sensors: `SADE`, `VALOISAA`, `AURINKOUP` (0/1 values)
 
 3. **Placeholder Mappings (empty, user must fill):**
-   - PWD status codes: `PWD_STATUS`, `PWD_TILA`, `PWD_NÄK_TILA`
-   - Station status: `ASEMAN_STATUS_1/2`, `ANTURIVIKA`
-   - DSC sensors: `DSC_STAT1/2`, `DSC_VASTAANOTTIMEN_PUHTAUS1/2`
-   - Optical sensors: `OPTISEN_ANTURIN_KELI1/2`, `OPTISEN_ANTURIN_VAROITUS1/2`
-   - Fiber sensors: `KUITUVASTE_PIENI_*`, `KUITUVASTE_SUURI_*`
-   - Warning levels: `VAROITUS_1-4`
+   - PWD status codes: `PWD_STATUS`, `PWD_TILA`, `PWD_NÄK_TILA`, `PWD_TAKAISINSIRONNAN_MUUTOS`
+   - Station status: `ASEMAN_STATUS_1`, `ASEMAN_STATUS_2`, `ASEMAN_STATUS_OPT2`
+   - DSC sensors: `DSC_STAT1`, `DSC_STAT2`, `DSC_VASTAANOTTIMEN_PUHTAUS1`, `DSC_VASTAANOTTIMEN_PUHTAUS2`
+   - Optical sensors: `OPTISEN_ANTURIN_KELI1`, `OPTISEN_ANTURIN_KELI2`, `OPTISEN_ANTURIN_VAROITUS1`, `OPTISEN_ANTURIN_VAROITUS2`
+   - Fiber sensors: `KUITUVASTE_PIENI_1/2`, `KUITUVASTE_SUURI_1/2`, `PIENEMMÄN_KUIDUN_VASTE_1`, `SUUREMMAN_KUIDUN_VASTE_1`
+   - Warning levels: `VAROITUS_1`, `VAROITUS_2`, `VAROITUS_3`, `VAROITUS_4`
+
+   **Note:** These sensors have empty dictionaries as placeholders. User should monitor actual sensor values and populate mappings based on observed codes and corresponding conditions.
 
 **Translation Logic:**
 ```python
@@ -630,6 +649,17 @@ python3 -c "import json; json.load(open('custom_components/digitraffic/manifest.
 - **Issues:** https://github.com/taskinen/digitraffic_hacs/issues
 
 ## Changelog
+
+### 2026-01-03 - Documentation Improvements
+**Improved:**
+- sensor.py section: Added detailed `async_setup_entry` documentation
+- Device Info section: Added `entry_type: "service"` field documentation
+- Sensor discovery: Documented dynamic sensor creation for all API-returned sensors
+- Translations section: More accurate placeholder sensor listings
+- Added prominent Claude Code update checklist at top of file
+
+**Purpose:**
+Ensured CLAUDE.md accurately reflects current implementation details that were previously undocumented or incomplete.
 
 ### 2026-01-03 - API User Identification
 **Added:**
