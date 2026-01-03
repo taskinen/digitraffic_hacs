@@ -1,6 +1,6 @@
 # CLAUDE.md - Digitraffic Home Assistant Integration
 
-**Last Updated:** 2026-01-03 (improved)
+**Last Updated:** 2026-01-03 (API translation corrections)
 
 ---
 ## ⚠️ CLAUDE CODE: UPDATE CHECKLIST - READ THIS FIRST!
@@ -262,30 +262,47 @@ def translate_sensor_value(sensor_key: str, value: Any) -> Any:
 
 **Translation Categories:**
 
-1. **Complete Mappings (verified):**
+1. **Complete Mappings (verified from API):**
    - `VALLITSEVA_SÄÄ`: WMO Code 4680 (0-99) - Present weather from automatic weather stations
      - Example: 63 → "Rain, heavy continuous"
      - Example: 71 → "Snow, slight continuous"
      - Source: https://codes.wmo.int/306/4680
 
-2. **Example Mappings (user should verify):**
-   - `KELI_1-4`: Road condition class (0-7)
-     - 0: Dry, 1: Damp, 2: Wet, 3: Wet snow, 4: Frosty, 5: Partly icy, 6: Icy, 7: Dry snow
-   - `TIENPINNAN_TILA_1-4`: Road surface state (0-5)
-     - 0: Dry, 1: Moist, 2: Wet, 3: Slush, 4: Frost, 5: Ice
-   - `SATEEN_OLOMUOTO_PWDXX`: Precipitation type (Vaisala PWD codes)
-     - 0: No precipitation, 10: Drizzle, 20: Rain, 30: Snow, etc.
-   - Binary sensors: `SADE`, `VALOISAA`, `AURINKOUP` (0/1 values)
+   - `SADE`: Precipitation intensity (codes 0-6)
+     - Source: API sensor ID 22
+     - Example: 0 → "Dry weather", 3 → "Abundant", 6 → "Abundant snow/sleet"
 
-3. **Placeholder Mappings (empty, user must fill):**
+   - `SATEEN_OLOMUOTO_PWDXX`: Precipitation type from PWD sensor (codes 7-19)
+     - Source: API sensor ID 25
+     - Example: 7 → "Dry weather", 10 → "Rain", 11 → "Snowfall", 19 → "Freezing rain"
+
+   - `KELI_1/2/3/4`: Road condition class (codes 0-9)
+     - Source: API sensors 27-28, 105, 115
+     - Example: 0 → "Sensor fault", 1 → "Dry", 3 → "Wet", 7 → "Ice", 9 → "Slushy"
+
+   - `VAROITUS_1/2/3/4`: Warning levels (codes 0-4)
+     - Source: API sensors 29-30, 106, 116, 175, 185
+     - Example: 0 → "OK", 1 → "Beware", 2 → "Alarm", 3 → "Frost"
+
+2. **Complete Mappings (verified, simple binary):**
+   - `SADE_TILA`: Precipitation state (0/1)
+   - `VALOISAA`: Light level binary (0: Dark, 1: Light)
+   - `AURINKOUP`: Sun position binary (0: Sun down, 1: Sun up)
+
+3. **Example Mappings (not verified from API - user should verify):**
+   - `TIENPINNAN_TILA_1-4/OPT1/OPT2`: Road surface state (0-5)
+     - Example codes: 0: Dry, 1: Moist, 2: Wet, 3: Slush, 4: Frost, 5: Ice
+     - Note: These codes are inferred but not verified from API data
+
+4. **Placeholder Mappings (empty, user must fill):**
    - PWD status codes: `PWD_STATUS`, `PWD_TILA`, `PWD_NÄK_TILA`, `PWD_TAKAISINSIRONNAN_MUUTOS`
-   - Station status: `ASEMAN_STATUS_1`, `ASEMAN_STATUS_2`, `ASEMAN_STATUS_OPT2`
+   - Station status: `ASEMAN_STATUS_1`, `ASEMAN_STATUS_2`, `ASEMAN_STATUS_OPT1`, `ASEMAN_STATUS_OPT2`, `ANTURIVIKA`
    - DSC sensors: `DSC_STAT1`, `DSC_STAT2`, `DSC_VASTAANOTTIMEN_PUHTAUS1`, `DSC_VASTAANOTTIMEN_PUHTAUS2`
    - Optical sensors: `OPTISEN_ANTURIN_KELI1`, `OPTISEN_ANTURIN_KELI2`, `OPTISEN_ANTURIN_VAROITUS1`, `OPTISEN_ANTURIN_VAROITUS2`
-   - Fiber sensors: `KUITUVASTE_PIENI_1/2`, `KUITUVASTE_SUURI_1/2`, `PIENEMMÄN_KUIDUN_VASTE_1`, `SUUREMMAN_KUIDUN_VASTE_1`
-   - Warning levels: `VAROITUS_1`, `VAROITUS_2`, `VAROITUS_3`, `VAROITUS_4`
+   - Fiber sensors: All `KUITUVASTE_*` variants
+   - Forecast: `SATEEN_OLOMUOTO_ENNUSTE`
 
-   **Note:** These sensors have empty dictionaries as placeholders. User should monitor actual sensor values and populate mappings based on observed codes and corresponding conditions.
+   **Note:** These sensors have empty dictionaries as placeholders because the API does not provide `sensorValueDescriptions` for them. Users should monitor actual sensor values and populate mappings based on observed codes and corresponding conditions.
 
 **Translation Logic:**
 ```python
@@ -649,6 +666,27 @@ python3 -c "import json; json.load(open('custom_components/digitraffic/manifest.
 - **Issues:** https://github.com/taskinen/digitraffic_hacs/issues
 
 ## Changelog
+
+### 2026-01-03 - API-Sourced Translation Corrections
+
+**Updated:**
+- `translations.py`: Corrected sensor value mappings using official API data from `/api/weather/v1/sensors`
+  - **SADE**: Fixed codes (now 0-6 instead of 0-1) - Added 5 additional precipitation intensity levels
+  - **SATEEN_OLOMUOTO_PWDXX**: Replaced incorrect codes with API codes 7-19 (was using codes 0, 10, 20, 30...)
+  - **KELI_1/2/3/4**: Corrected all codes (0-9) to match API definitions - Code 0 now correctly shows "Sensor fault" instead of "Dry"
+  - **VAROITUS_1/2/3/4**: Added missing mappings (codes 0-4) for warning levels
+- All translations now use English descriptions with Finnish originals preserved in comments
+
+**Source:** `/api/weather/v1/sensors` endpoint - `sensorValueDescriptions` field
+
+**Purpose:**
+Ensures sensor value translations match the official Digitraffic API definitions, providing accurate road condition and weather status displays. This fixes incorrect mappings that were based on assumptions rather than verified API data.
+
+**How to find API mappings in the future:**
+1. Access `https://tie.digitraffic.fi/api/weather/v1/sensors`
+2. Search for sensor by name or ID
+3. Look for `sensorValueDescriptions` array containing code-to-description mappings
+4. Note that not all sensors have value descriptions in the API - those remain as empty placeholders for user observation
 
 ### 2026-01-03 - Documentation Improvements
 **Improved:**

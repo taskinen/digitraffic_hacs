@@ -99,17 +99,22 @@ SENSOR_VALUE_TRANSLATIONS = {
     # WMO Weather Codes
     "VALLITSEVA_SÄÄ": WMO_4680_PRESENT_WEATHER,
 
-    # Precipitation Type (Vaisala PWD)
-    # Note: These are example values - verify with actual sensor data
+    # Precipitation Type (Vaisala PWD, from API sensor ID 25)
+    # Source: /api/weather/v1/sensors sensorValueDescriptions
     "SATEEN_OLOMUOTO_PWDXX": {
-        0: "No precipitation",
-        10: "Drizzle",
-        20: "Rain",
-        30: "Snow",
-        40: "Sleet",
-        50: "Freezing drizzle",
-        60: "Freezing rain",
-        70: "Ice pellets",
+        7: "Dry weather",        # Pouta
+        8: "Very light rain",    # Hyvin heikko sade, olomuotoa ei voida päätellä
+        9: "Drizzle",            # Tihku
+        10: "Rain",              # Vesisade
+        11: "Snowfall",          # Lumisade
+        12: "Wet sleet",         # Märkä räntä
+        13: "Sleet",             # Räntä
+        14: "Hails",             # Rakeita
+        15: "Ice crystals",      # Jääkiteitä
+        16: "Snow grains",       # Lumijyväsiä
+        17: "Graupel",           # Lumirakeita
+        18: "Freezing drizzle",  # Jäätävä tihku
+        19: "Freezing rain",     # Jäätävä sade
     },
 
     # Precipitation State
@@ -118,54 +123,67 @@ SENSOR_VALUE_TRANSLATIONS = {
         1: "Rain detected",
     },
 
-    # Simple precipitation indicator
+    # Precipitation indicator (from API sensor ID 22)
+    # Source: /api/weather/v1/sensors sensorValueDescriptions
     "SADE": {
-        0: "No rain",
-        1: "Rain",
+        0: "Dry weather",         # Pouta
+        1: "Weak",                # Heikko
+        2: "Moderate",            # Kohtalainen
+        3: "Abundant",            # Runsas
+        4: "Light snow/sleet",    # Heikko lumi/räntä
+        5: "Moderate snow/sleet", # Kohtalainen lumi/räntä
+        6: "Abundant snow/sleet", # Runsas lumi/räntä
     },
 
-    # Road Condition Class (Keliluokka)
-    # Note: These are example mappings based on Finnish road condition categories
-    # User should verify these codes match actual API responses
+    # Road Condition Class (Keliluokka, from API sensors 27-28, 105, 115)
+    # Source: /api/weather/v1/sensors sensorValueDescriptions
     "KELI_1": {
-        0: "Dry",
-        1: "Damp",
-        2: "Wet",
-        3: "Wet snow",
-        4: "Frosty",
-        5: "Partly icy",
-        6: "Icy",
-        7: "Dry snow",
+        0: "Sensor fault",         # Anturissa on vikaa
+        1: "Dry",                  # Kuiva
+        2: "Moist",                # Kostea
+        3: "Wet",                  # Märkä
+        4: "Wet and salty",        # Märkä ja suolattu
+        5: "Frost",                # Kuura
+        6: "Snow",                 # Lumi
+        7: "Ice",                  # Jää
+        8: "Probably moist/salty", # Todennäköisesti kostea ja suolainen
+        9: "Slushy",               # Sohjoinen
     },
     "KELI_2": {
-        0: "Dry",
-        1: "Damp",
-        2: "Wet",
-        3: "Wet snow",
-        4: "Frosty",
-        5: "Partly icy",
-        6: "Icy",
-        7: "Dry snow",
+        0: "Sensor fault",         # Anturissa on vikaa
+        1: "Dry",                  # Kuiva
+        2: "Moist",                # Kostea
+        3: "Wet",                  # Märkä
+        4: "Wet and salty",        # Märkä ja suolattu
+        5: "Frost",                # Kuura
+        6: "Snow",                 # Lumi
+        7: "Ice",                  # Jää
+        8: "Probably moist/salty", # Todennäköisesti kostea ja suolainen
+        9: "Slushy",               # Sohjoinen
     },
     "KELI_3": {
-        0: "Dry",
-        1: "Damp",
-        2: "Wet",
-        3: "Wet snow",
-        4: "Frosty",
-        5: "Partly icy",
-        6: "Icy",
-        7: "Dry snow",
+        0: "Sensor fault",         # Anturissa on vikaa
+        1: "Dry",                  # Kuiva
+        2: "Moist",                # Kostea
+        3: "Wet",                  # Märkä
+        4: "Wet and salty",        # Märkä ja suolattu
+        5: "Frost",                # Kuura
+        6: "Snow",                 # Lumi
+        7: "Ice",                  # Jää
+        8: "Probably moist/salty", # Todennäköisesti kostea ja suolainen
+        9: "Slushy",               # Sohjoinen
     },
     "KELI_4": {
-        0: "Dry",
-        1: "Damp",
-        2: "Wet",
-        3: "Wet snow",
-        4: "Frosty",
-        5: "Partly icy",
-        6: "Icy",
-        7: "Dry snow",
+        0: "Sensor fault",         # Anturissa on vikaa
+        1: "Dry",                  # Kuiva
+        2: "Moist",                # Kostea
+        3: "Wet",                  # Märkä
+        4: "Wet and salty",        # Märkä ja suolattu
+        5: "Frost",                # Kuura
+        6: "Snow",                 # Lumi
+        7: "Ice",                  # Jää
+        8: "Probably moist/salty", # Todennäköisesti kostea ja suolainen
+        9: "Slushy",               # Sohjoinen
     },
 
     # Road Surface State (Tienpinnan tila)
@@ -229,12 +247,36 @@ SENSOR_VALUE_TRANSLATIONS = {
         1: "Sun up",
     },
 
-    # Warning levels
-    # Note: Placeholder - user should fill in based on observations
-    "VAROITUS_1": {},
-    "VAROITUS_2": {},
-    "VAROITUS_3": {},
-    "VAROITUS_4": {},
+    # Warning levels (from API sensors 29-30, 106, 116, 175, 185)
+    # Source: /api/weather/v1/sensors sensorValueDescriptions
+    "VAROITUS_1": {
+        0: "OK",
+        1: "Beware",  # Varo
+        2: "Alarm",   # Häly
+        3: "Frost",   # Kuura
+        4: "Rain",    # Sade
+    },
+    "VAROITUS_2": {
+        0: "OK",
+        1: "Beware",  # Varo
+        2: "Alarm",   # Häly
+        3: "Frost",   # Kuura
+        4: "Rain",    # Sade
+    },
+    "VAROITUS_3": {
+        0: "OK",
+        1: "Beware",  # Varo
+        2: "Alarm",   # Häly
+        3: "Frost",   # Kuura
+        4: "Rain",    # Sade
+    },
+    "VAROITUS_4": {
+        0: "OK",
+        1: "Beware",  # Varo
+        2: "Alarm",   # Häly
+        3: "Frost",   # Kuura
+        4: "Rain",    # Sade
+    },
 
     # PWD (Present Weather Detector) sensors
     # Note: Placeholder - user should fill in based on observations
