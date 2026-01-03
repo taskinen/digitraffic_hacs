@@ -1,6 +1,23 @@
 # CLAUDE.md - Digitraffic Home Assistant Integration
 
-**Last Updated:** 2026-01-02
+**Last Updated:** 2026-01-03
+
+---
+## ⚠️ CLAUDE CODE: UPDATE CHECKLIST - READ THIS FIRST!
+
+**Before completing ANY task, check if you modified:**
+- [ ] Any .py files (especially `__init__.py`, `config_flow.py`, `const.py`, `sensor.py`, `translations.py`)
+- [ ] Constants, API endpoints, or headers
+- [ ] API request patterns or error handling
+- [ ] Sensor definitions or translation mappings
+- [ ] Data flow or architecture
+
+**If YES to ANY:** You MUST update this CLAUDE.md file NOW:
+1. Update "Last Updated" date at top
+2. Add entry to Changelog section (at bottom)
+3. Update relevant documentation sections
+
+---
 
 > **IMPORTANT:** This file must be kept up-to-date whenever significant changes are made to the codebase. Update this file BEFORE committing changes that affect architecture, add new features, modify data flows, or change development patterns.
 
@@ -135,6 +152,9 @@ UPDATE_INTERVAL_MINUTES = 5
 # API Endpoints
 API_ENDPOINT_STATIONS = "https://tie.digitraffic.fi/api/weather/v1/stations"
 API_ENDPOINT_STATION_DATA = "https://tie.digitraffic.fi/api/weather/v1/stations/{}/data"
+
+# API Headers
+API_USER_AGENT = "Home Assistant github.com/taskinen/digitraffic_hacs"
 ```
 
 **SENSOR_MAP Structure:**
@@ -366,6 +386,7 @@ Response structure:
 
 ### API Characteristics
 - **No Authentication Required:** Public API
+- **User Identification:** All requests include `Digitraffic-User` header to identify the client
 - **Rate Limiting:** Not officially documented, but use reasonable intervals (5 minutes default)
 - **Timeout:** 10 seconds (configured in `__init__.py`)
 - **Content-Type:** `application/json`
@@ -454,7 +475,10 @@ Always use this pattern for API calls:
 ```python
 try:
     async with async_timeout.timeout(10):
-        response = await session.get(url)
+        response = await session.get(
+            url,
+            headers={"Digitraffic-User": API_USER_AGENT}
+        )
         response.raise_for_status()
         data = await response.json()
         # Process data
@@ -606,6 +630,18 @@ python3 -c "import json; json.load(open('custom_components/digitraffic/manifest.
 - **Issues:** https://github.com/taskinen/digitraffic_hacs/issues
 
 ## Changelog
+
+### 2026-01-03 - API User Identification
+**Added:**
+- `API_USER_AGENT` constant in `const.py`
+- `Digitraffic-User` header to all API requests
+
+**Modified:**
+- `__init__.py`: Added header to coordinator API requests
+- `config_flow.py`: Added header to station fetch and validation requests
+
+**Purpose:**
+Properly identifies the integration to Digitraffic API as requested by API guidelines. The header value is "Home Assistant github.com/taskinen/digitraffic_hacs".
 
 ### 2026-01-02 - Sensor Value Translation Framework
 **Added:**

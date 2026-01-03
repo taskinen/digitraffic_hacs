@@ -9,6 +9,9 @@ CONF_STATION_ID = "station_id"
 API_ENDPOINT_STATION_DATA = "https://tie.digitraffic.fi/api/weather/v1/stations/{}/data"
 API_ENDPOINT_STATIONS = "https://tie.digitraffic.fi/api/weather/v1/stations"
 
+# API Headers
+API_USER_AGENT = "Home Assistant github.com/taskinen/digitraffic_hacs"
+
 # Default update interval
 UPDATE_INTERVAL_MINUTES = 5
 

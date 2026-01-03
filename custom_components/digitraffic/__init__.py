@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, PLATFORMS, CONF_STATION_ID, API_ENDPOINT_STATION_DATA, UPDATE_INTERVAL_MINUTES
+from .const import DOMAIN, PLATFORMS, CONF_STATION_ID, API_ENDPOINT_STATION_DATA, UPDATE_INTERVAL_MINUTES, API_USER_AGENT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +67,10 @@ class DigitrafficDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch data from API endpoint."""
         try:
             async with async_timeout.timeout(10):
-                response = await self.session.get(self.api_url)
+                response = await self.session.get(
+                    self.api_url,
+                    headers={"Digitraffic-User": API_USER_AGENT}
+                )
                 response.raise_for_status() # Raise exception for bad status codes
                 data = await response.json()
                 # Process data: Extract relevant sensor values

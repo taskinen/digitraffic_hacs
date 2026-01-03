@@ -11,7 +11,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import selector
 from homeassistant import data_entry_flow
 
-from .const import DOMAIN, CONF_STATION_ID, API_ENDPOINT_STATIONS
+from .const import DOMAIN, CONF_STATION_ID, API_ENDPOINT_STATIONS, API_USER_AGENT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +23,13 @@ async def fetch_stations(hass) -> dict:
     
     try:
         async with async_timeout.timeout(30):
-            response = await session.get(url, headers={"Accept-Encoding": "gzip"})
+            response = await session.get(
+                url,
+                headers={
+                    "Accept-Encoding": "gzip",
+                    "Digitraffic-User": API_USER_AGENT
+                }
+            )
             _LOGGER.debug("Received response for stations: Status %s", response.status)
             
             if response.status != 200:
@@ -75,7 +81,10 @@ async def validate_station_id(hass, station_id: str) -> dict | None:
             return None
 
         async with async_timeout.timeout(10):
-            response = await session.get(url)
+            response = await session.get(
+                url,
+                headers={"Digitraffic-User": API_USER_AGENT}
+            )
             _LOGGER.debug("Received response for station ID %s: Status %s", station_id, response.status)
 
             if response.status == 404:
