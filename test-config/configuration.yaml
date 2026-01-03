@@ -1,0 +1,69 @@
+# Home Assistant Test Configuration for Digitraffic Development
+# ============================================================
+# This is an optional minimal configuration file for testing.
+# To use it, uncomment the volume mount in docker-compose.yml
+
+# Default config
+default_config:
+
+# Enable debug logging for the Digitraffic integration
+logger:
+  default: info
+  logs:
+    custom_components.digitraffic: debug
+    homeassistant.helpers.entity: info
+    homeassistant.components.sensor: info
+
+# HTTP configuration (optional, for development)
+http:
+  # Allow iframe embedding for development
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.0.0.0/8
+
+# Recorder - limit database size for testing
+recorder:
+  purge_keep_days: 2
+  commit_interval: 30
+
+# Enable Home Assistant frontend
+frontend:
+
+# Enable configuration via UI
+config:
+
+# Enable Home Assistant API
+api:
+
+# History tracking
+history:
+
+# Logbook
+logbook:
+
+# Sun component (useful for testing time-based automations)
+sun:
+
+# System Health
+system_health:
+
+# Example automation to test Digitraffic sensors
+# Uncomment after setting up the integration
+# automation:
+#   - alias: "Alert on Icy Roads"
+#     trigger:
+#       - platform: state
+#         entity_id: sensor.vantaa_keli_1  # Replace with your actual sensor
+#         to: "Icy"
+#     action:
+#       - service: persistent_notification.create
+#         data:
+#           title: "Road Condition Alert"
+#           message: "Roads are icy at {{ trigger.to_state.attributes.station_name }}"
+
+# Example template sensor
+# template:
+#   - sensor:
+#       - name: "Road Temperature Celsius"
+#         unit_of_measurement: "°C"
+#         state: "{{ states('sensor.vantaa_tie_1') | float(0) }}"

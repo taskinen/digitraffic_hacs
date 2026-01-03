@@ -192,6 +192,17 @@ temp/
 *.rej
 .git-rewrite/
 
+# Docker
+# ------
+# Don't commit Docker volumes or backups
+ha-config-backup.tar.gz
+*.tar.gz
+
+# Allow the docker-compose.yml and DOCKER.md to be committed
+# but ignore any local overrides
+docker-compose.override.yml
+.env.docker
+
 # Other
 # -----
 .vscode-test

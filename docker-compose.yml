@@ -1,0 +1,105 @@
+services:
+  homeassistant:
+    container_name: digitraffic-homeassistant
+    image: homeassistant/home-assistant:stable
+    volumes:
+      # Mount the custom component into Home Assistant
+      - ./custom_components/digitraffic:/config/custom_components/digitraffic:ro
+
+      # Persist Home Assistant configuration
+      - ha-config:/config
+
+      # Optional: Mount a custom configuration.yaml for testing
+      # Uncomment and create test-config/configuration.yaml if needed
+      # - ./test-config/configuration.yaml:/config/configuration.yaml
+    ports:
+      # Home Assistant web interface
+      - "8123:8123"
+    environment:
+      - TZ=Europe/Helsinki
+    restart: unless-stopped
+    networks:
+      - homeassistant
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Optional: Add a simple HTTP server to view logs or files
+  # Uncomment if you want a file browser for debugging
+  # filebrowser:
+  #   image: filebrowser/filebrowser:latest
+  #   container_name: digitraffic-filebrowser
+  #   volumes:
+  #     - ha-config:/srv
+  #   ports:
+  #     - "8080:80"
+  #   networks:
+  #     - homeassistant
+
+volumes:
+  # Persistent volume for Home Assistant configuration
+  # This will persist between container restarts
+  ha-config:
+    name: digitraffic-ha-config
+
+networks:
+  homeassistant:
+    name: digitraffic-network
+    driver: bridge
+
+# Development Notes:
+# ==================
+#
+# Starting the environment:
+#   docker compose up -d
+#
+# Viewing logs:
+#   docker compose logs -f homeassistant
+#
+# Restarting after code changes:
+#   docker compose restart homeassistant
+#   (or reload the integration from HA UI: Developer Tools → YAML → Reload custom integrations)
+#
+# Stopping the environment:
+#   docker compose down
+#
+# Removing all data (fresh start):
+#   docker compose down -v
+#
+# Accessing Home Assistant:
+#   http://localhost:8123
+#
+# First-time setup:
+#   1. Start the container: docker compose up -d
+#   2. Wait ~60 seconds for Home Assistant to initialize
+#   3. Open http://localhost:8123 in your browser
+#   4. Complete the onboarding (create user account)
+#   5. Go to Settings → Devices & Services → Add Integration
+#   6. Search for "Digitraffic" and configure a weather station
+#
+# Debugging:
+#   - Enable debug logging by adding to configuration.yaml:
+#     logger:
+#       default: info
+#       logs:
+#         custom_components.digitraffic: debug
+#   - View logs: docker compose logs -f homeassistant
+#   - Access container shell: docker exec -it digitraffic-homeassistant /bin/bash
+#   - Check custom component is mounted: docker exec digitraffic-homeassistant ls -la /config/custom_components/
+#
+# Automatic reloading:
+#   - Code changes to the custom component are reflected immediately in the mounted volume
+#   - You need to reload the integration (Developer Tools → YAML) or restart HA
+#   - For manifest.json changes, a full restart is usually required
+#
+# Testing different HA versions:
+#   - Change the image tag: homeassistant/home-assistant:2024.1.0
+#   - Or use 'dev' for the latest development version
+#
+# Volume inspection:
+#   - Config location: docker volume inspect digitraffic-ha-config
+#   - To backup: docker run --rm -v digitraffic-ha-config:/data -v $(pwd):/backup alpine tar czf /backup/ha-config-backup.tar.gz -C /data .
+#   - To restore: docker run --rm -v digitraffic-ha-config:/data -v $(pwd):/backup alpine tar xzf /backup/ha-config-backup.tar.gz -C /data
