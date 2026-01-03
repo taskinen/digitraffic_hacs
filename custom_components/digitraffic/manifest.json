@@ -4,9 +4,13 @@
   "documentation": "https://github.com/taskinen/digitraffic_hacs",
   "issue_tracker": "https://github.com/taskinen/digitraffic_hacs/issues",
   "dependencies": [],
-  "codeowners": ["@taskinen"],
-  "requirements": ["aiohttp"],
-  "version": "0.1.0",
+  "codeowners": [
+    "@taskinen"
+  ],
+  "requirements": [
+    "aiohttp"
+  ],
+  "version": "1.0.0",
   "config_flow": true,
   "iot_class": "cloud_polling"
 }
