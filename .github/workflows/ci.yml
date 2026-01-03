@@ -1,0 +1,45 @@
+name: CI - Syntax Validation
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  syntax-check:
+    name: Python Syntax Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Python syntax
+        run: |
+          echo "Validating Python files..."
+          python -m py_compile custom_components/digitraffic/__init__.py
+          python -m py_compile custom_components/digitraffic/config_flow.py
+          python -m py_compile custom_components/digitraffic/const.py
+          python -m py_compile custom_components/digitraffic/sensor.py
+          python -m py_compile custom_components/digitraffic/translations.py
+          echo "✓ All Python files passed syntax validation"
+
+      - name: Validate manifest.json
+        run: |
+          echo "Validating manifest.json..."
+          python -c "import json; json.load(open('custom_components/digitraffic/manifest.json'))"
+          echo "✓ manifest.json is valid JSON"
+
+      - name: Validate hacs.json
+        run: |
+          echo "Validating hacs.json..."
+          python -c "import json; json.load(open('hacs.json'))"
+          echo "✓ hacs.json is valid JSON"

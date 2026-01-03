@@ -1,6 +1,6 @@
 # CLAUDE.md - Digitraffic Home Assistant Integration
 
-**Last Updated:** 2026-01-03 (API translation corrections)
+**Last Updated:** 2026-01-03 (GitHub Actions CI/CD implementation)
 
 ---
 ## ⚠️ CLAUDE CODE: UPDATE CHECKLIST - READ THIS FIRST!
@@ -61,10 +61,14 @@ custom_components/digitraffic/
 ├── config_flow.py              # UI configuration flow
 ├── const.py                    # Constants, API endpoints, sensor definitions
 ├── sensor.py                   # Sensor platform implementation
-├── translations.py             # Sensor value translation mappings (NEW)
+├── translations.py             # Sensor value translation mappings
 └── brand/                      # Logo and icon assets
     ├── icon.png
     └── logo.png
+
+.github/workflows/
+├── ci.yml                      # CI syntax validation workflow
+└── release.yml                 # Release automation workflow
 ```
 
 ## File Purposes and Key Components
@@ -584,6 +588,214 @@ Check logs: Settings → System → Logs → Filter by "digitraffic"
 3. Check sensor states update to show new translations
 4. Verify `raw_value` attribute still shows original numeric code
 
+## CI/CD and Release Management
+
+### GitHub Actions Workflows
+
+The repository uses GitHub Actions for automated testing and release management.
+
+**Workflow Files:**
+- `.github/workflows/ci.yml` - Continuous Integration
+- `.github/workflows/release.yml` - Release Management
+
+### CI Workflow (Automatic)
+
+**Triggers:** Every push and pull request to any branch
+
+**What it does:**
+- Validates Python syntax for all `.py` files using `python -m py_compile`
+- Validates `manifest.json` as valid JSON
+- Validates `hacs.json` as valid JSON
+- Runs in ~10-15 seconds
+
+**Purpose:** Catch syntax errors early before they're merged. When branch protection is enabled, this prevents broken code from being committed.
+
+**Viewing Results:**
+- Go to the "Actions" tab in GitHub
+- Click on the latest workflow run
+- View the output of each validation step
+
+### Release Workflow (Manual)
+
+**Trigger:** Manual dispatch only (Actions → Release → Run workflow)
+
+**What it does:**
+1. Determines the next version number (auto-increment or manual)
+2. Updates `manifest.json` with the new version
+3. Generates release notes from commit history
+4. Commits the manifest.json change
+5. Creates a git tag (format: `vX.Y.Z`)
+6. Creates a GitHub release
+7. HACS users see the new version available
+
+**Version Management:**
+
+The workflow uses **semantic versioning** (X.Y.Z format) and stores versions as git tags:
+
+- **Source of truth:** Git tags matching `v*.*.*` pattern
+- **Default behavior:** Auto-increment minor version (1.0.0 → 1.1.0 → 1.2.0)
+- **Manual override:** You can specify any version number
+- **First release:** Will be `v1.0.0` (existing `0.0.1` tag is ignored)
+
+**Workflow Inputs:**
+
+1. **Version** (optional):
+   - Leave empty for auto-increment
+   - Or enter version number (e.g., `2.0.0` or `v2.0.0`)
+   - Format must be `X.Y.Z` (three numbers separated by dots)
+
+2. **Release Notes** (optional):
+   - Leave empty for auto-generated from commits since last release
+   - Or enter custom release notes
+
+3. **Prerelease** (checkbox):
+   - Check to mark as pre-release
+   - HACS won't auto-install pre-releases
+
+### Creating a Release
+
+**Step-by-step:**
+
+1. Go to your repository on GitHub
+2. Click "Actions" tab
+3. Click "Release" in the left sidebar
+4. Click "Run workflow" button (top right)
+5. Fill in the inputs (or leave empty for auto-increment):
+   - Version: [empty] or `1.0.0`
+   - Release notes: [empty] or custom text
+   - Prerelease: unchecked (unless testing)
+6. Click "Run workflow"
+7. Wait ~30 seconds for workflow to complete
+8. Verify the release at: `https://github.com/taskinen/digitraffic_hacs/releases`
+
+**What happens:**
+
+- Tag created: `vX.Y.Z`
+- GitHub release created with release notes
+- `manifest.json` updated and committed
+- HACS shows the new version to users
+
+### Release Examples
+
+**Example 1: First Release (Auto-increment)**
+```
+Inputs:
+  Version: [empty]
+  Release notes: [empty]
+  Prerelease: unchecked
+
+Result: v1.0.0 created
+Release notes: Auto-generated from all commits
+```
+
+**Example 2: Next Release (Auto-increment)**
+```
+Current version: v1.0.0
+
+Inputs:
+  Version: [empty]
+  Release notes: [empty]
+  Prerelease: unchecked
+
+Result: v1.1.0 created
+Release notes: Commits since v1.0.0
+```
+
+**Example 3: Major Release (Manual)**
+```
+Current version: v1.5.0
+
+Inputs:
+  Version: 2.0.0
+  Release notes: "Major update with breaking changes"
+  Prerelease: unchecked
+
+Result: v2.0.0 created
+Next auto-increment will be v2.1.0
+```
+
+**Example 4: Pre-release**
+```
+Inputs:
+  Version: 1.2.0-beta
+  Release notes: [empty]
+  Prerelease: checked
+
+Result: v1.2.0-beta created (marked as pre-release)
+HACS won't auto-install this version
+```
+
+### Version History Tracking
+
+To see all releases:
+```bash
+# List all version tags
+git tag -l 'v*.*.*'
+
+# View specific release
+git show v1.0.0
+
+# Compare releases
+git diff v1.0.0...v1.1.0
+```
+
+### Troubleshooting Releases
+
+**Error: "Tag already exists"**
+- You're trying to create a version that already exists
+- Check existing tags: `git tag -l 'v*.*.*'`
+- Use a different version number
+
+**Error: "Invalid version format"**
+- Version must be `X.Y.Z` format (three numbers)
+- Examples: `1.0.0`, `2.5.3` (not `1.0`, `v1.0.0`, `1.0.0-rc1`)
+- Pre-release versions like `1.0.0-beta` are allowed
+
+**Workflow failed during commit**
+- Check GitHub Actions logs for details
+- May need to fix merge conflicts manually
+- Tag and release will NOT be created if commit fails
+
+**Want to undo a release:**
+1. Delete the GitHub release (go to Releases → Delete)
+2. Delete the tag:
+   ```bash
+   git tag -d vX.Y.Z
+   git push origin :refs/tags/vX.Y.Z
+   ```
+3. Revert the manifest.json commit:
+   ```bash
+   git revert <commit-hash>
+   git push origin main
+   ```
+
+### HACS Integration
+
+**How HACS uses releases:**
+- HACS reads GitHub releases (not tags alone)
+- Version displayed in HACS UI comes from tag name (e.g., `v1.0.0` shows as `1.0.0`)
+- Users can see available versions and release notes
+- Updates notify users when new versions are available
+
+**What users see:**
+```
+Digitraffic
+Current version: 1.0.0
+Available version: 1.1.0
+
+Release notes:
+- Fix temperature sensor translation
+- Add support for new weather codes
+- Update API headers
+```
+
+**Without releases (before CI/CD):**
+```
+Digitraffic
+Current version: abc1234 (commit hash)
+Available version: def5678 (commit hash)
+```
+
 ## Known Issues and Limitations
 
 ### Current Known Issues
@@ -674,6 +886,39 @@ python3 -c "import json; json.load(open('custom_components/digitraffic/manifest.
 - **Issues:** https://github.com/taskinen/digitraffic_hacs/issues
 
 ## Changelog
+
+### 2026-01-03 - GitHub Actions CI/CD Implementation
+
+**Added:**
+- `.github/workflows/ci.yml`: Continuous Integration workflow
+  - Automatic Python syntax validation on every push and pull request
+  - Validates all `.py` files using `python -m py_compile`
+  - Validates `manifest.json` and `hacs.json` as valid JSON
+  - Runs in ~10-15 seconds
+
+- `.github/workflows/release.yml`: Release automation workflow
+  - Manual trigger for creating releases
+  - Auto-increment minor version by default (1.0.0 → 1.1.0 → 1.2.0)
+  - Manual version override option
+  - Auto-generated release notes from commit history
+  - Updates `manifest.json` version field automatically
+  - Creates GitHub releases for HACS compatibility
+  - Workflow inputs: version (optional), release_notes (optional), prerelease (boolean)
+
+**Documentation:**
+- Added comprehensive "CI/CD and Release Management" section to CLAUDE.md
+- Documented version management strategy (git tags as source of truth)
+- Step-by-step release creation guide
+- Troubleshooting section for common release issues
+- HACS integration explanation
+
+**Version Management:**
+- Git tags matching `v*.*.*` are the source of truth for versions
+- First release will be `v1.0.0` (existing `0.0.1` tag is ignored)
+- Semantic versioning enforced (X.Y.Z format)
+
+**Purpose:**
+Enables professional release management with clean version numbers in HACS UI. Users will see versions like "1.0.0" and "1.1.0" instead of commit hashes, with proper release notes for each update.
 
 ### 2026-01-03 - API-Sourced Translation Corrections and PWD Status Codes
 
