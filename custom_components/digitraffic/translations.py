@@ -117,10 +117,23 @@ SENSOR_VALUE_TRANSLATIONS = {
         19: "Freezing rain",     # Jäätävä sade
     },
 
-    # Precipitation State
+    # Precipitation State (uses PWD precipitation type codes 7-19)
+    # Note: API has empty sensorValueDescriptions, but observed values match PWD codes
+    # Same as SATEEN_OLOMUOTO_PWDXX
     "SADE_TILA": {
-        0: "No rain",
-        1: "Rain detected",
+        7: "Dry weather",        # Pouta
+        8: "Very light rain",    # Hyvin heikko sade
+        9: "Drizzle",            # Tihku
+        10: "Rain",              # Vesisade
+        11: "Snowfall",          # Lumisade
+        12: "Wet sleet",         # Märkä räntä
+        13: "Sleet",             # Räntä
+        14: "Hails",             # Rakeita
+        15: "Ice crystals",      # Jääkiteitä
+        16: "Snow grains",       # Lumijyväsiä
+        17: "Graupel",           # Lumirakeita
+        18: "Freezing drizzle",  # Jäätävä tihku
+        19: "Freezing rain",     # Jäätävä sade
     },
 
     # Precipitation indicator (from API sensor ID 22)
@@ -279,11 +292,20 @@ SENSOR_VALUE_TRANSLATIONS = {
     },
 
     # PWD (Present Weather Detector) sensors
-    # Note: Placeholder - user should fill in based on observations
-    "PWD_STATUS": {},
+    # Source: Vaisala PWD22 User Manual - Hardware status codes
+    "PWD_STATUS": {
+        0: "OK",                        # Normal operation
+        1: "Hardware error",            # Fatal hardware failure detected
+        2: "Hardware warning",          # Suspected faulty hardware
+        3: "Backscatter alarm",         # Contamination too high - clean sensor immediately
+        4: "Backscatter warning",       # Contamination increased - clean sensor soon
+    },
+
+    # PWD state sensors - No official documentation available
+    # Note: Placeholder - user should monitor actual values and fill in based on observations
     "PWD_TILA": {},
     "PWD_NÄK_TILA": {},
-    "PWD_TAKAISINSIRONNAN_MUUTOS": {},
+    "PWD_LÄHETTIMEN_TAKAISINSIRONNAN_MUUTOS": {},  # Note: API sensor name may vary
 
     # Station status sensors
     # Note: Placeholder - user should fill in based on observations

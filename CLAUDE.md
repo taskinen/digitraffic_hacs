@@ -284,8 +284,16 @@ def translate_sensor_value(sensor_key: str, value: Any) -> Any:
      - Source: API sensors 29-30, 106, 116, 175, 185
      - Example: 0 → "OK", 1 → "Beware", 2 → "Alarm", 3 → "Frost"
 
+   - `PWD_STATUS`: PWD sensor hardware status (codes 0-4)
+     - Source: Vaisala PWD22 User Manual
+     - Example: 0 → "OK", 1 → "Hardware error", 3 → "Backscatter alarm", 4 → "Backscatter warning"
+
+   - `SADE_TILA`: Precipitation state (codes 7-19)
+     - Source: User observation - uses same PWD precipitation type codes as SATEEN_OLOMUOTO_PWDXX
+     - Example: 17 → "Graupel", 18 → "Freezing drizzle"
+     - Note: API has empty sensorValueDescriptions, but observed values match PWD codes
+
 2. **Complete Mappings (verified, simple binary):**
-   - `SADE_TILA`: Precipitation state (0/1)
    - `VALOISAA`: Light level binary (0: Dark, 1: Light)
    - `AURINKOUP`: Sun position binary (0: Sun down, 1: Sun up)
 
@@ -295,14 +303,14 @@ def translate_sensor_value(sensor_key: str, value: Any) -> Any:
      - Note: These codes are inferred but not verified from API data
 
 4. **Placeholder Mappings (empty, user must fill):**
-   - PWD status codes: `PWD_STATUS`, `PWD_TILA`, `PWD_NÄK_TILA`, `PWD_TAKAISINSIRONNAN_MUUTOS`
+   - PWD state sensors: `PWD_TILA`, `PWD_NÄK_TILA`, `PWD_LÄHETTIMEN_TAKAISINSIRONNAN_MUUTOS`
    - Station status: `ASEMAN_STATUS_1`, `ASEMAN_STATUS_2`, `ASEMAN_STATUS_OPT1`, `ASEMAN_STATUS_OPT2`, `ANTURIVIKA`
    - DSC sensors: `DSC_STAT1`, `DSC_STAT2`, `DSC_VASTAANOTTIMEN_PUHTAUS1`, `DSC_VASTAANOTTIMEN_PUHTAUS2`
    - Optical sensors: `OPTISEN_ANTURIN_KELI1`, `OPTISEN_ANTURIN_KELI2`, `OPTISEN_ANTURIN_VAROITUS1`, `OPTISEN_ANTURIN_VAROITUS2`
    - Fiber sensors: All `KUITUVASTE_*` variants
    - Forecast: `SATEEN_OLOMUOTO_ENNUSTE`
 
-   **Note:** These sensors have empty dictionaries as placeholders because the API does not provide `sensorValueDescriptions` for them. Users should monitor actual sensor values and populate mappings based on observed codes and corresponding conditions.
+   **Note:** These sensors have empty dictionaries as placeholders because the API does not provide `sensorValueDescriptions` for them and no manufacturer documentation could be found. Users should monitor actual sensor values and populate mappings based on observed codes and corresponding conditions.
 
 **Translation Logic:**
 ```python
@@ -667,26 +675,44 @@ python3 -c "import json; json.load(open('custom_components/digitraffic/manifest.
 
 ## Changelog
 
-### 2026-01-03 - API-Sourced Translation Corrections
+### 2026-01-03 - API-Sourced Translation Corrections and PWD Status Codes
 
 **Updated:**
-- `translations.py`: Corrected sensor value mappings using official API data from `/api/weather/v1/sensors`
+- `translations.py`: Corrected sensor value mappings using official API data, Vaisala documentation, and user observations
   - **SADE**: Fixed codes (now 0-6 instead of 0-1) - Added 5 additional precipitation intensity levels
   - **SATEEN_OLOMUOTO_PWDXX**: Replaced incorrect codes with API codes 7-19 (was using codes 0, 10, 20, 30...)
+  - **SADE_TILA**: Corrected from binary (0-1) to PWD precipitation type codes (7-19) based on user observations
   - **KELI_1/2/3/4**: Corrected all codes (0-9) to match API definitions - Code 0 now correctly shows "Sensor fault" instead of "Dry"
   - **VAROITUS_1/2/3/4**: Added missing mappings (codes 0-4) for warning levels
+  - **PWD_STATUS**: Added hardware status codes (0-4) from Vaisala PWD22 User Manual
 - All translations now use English descriptions with Finnish originals preserved in comments
 
-**Source:** `/api/weather/v1/sensors` endpoint - `sensorValueDescriptions` field
+**Sources:**
+- `/api/weather/v1/sensors` endpoint - `sensorValueDescriptions` field
+- Vaisala PWD22 User Manual - Hardware status and diagnostic codes
+- User observations of actual sensor values in production
 
 **Purpose:**
-Ensures sensor value translations match the official Digitraffic API definitions, providing accurate road condition and weather status displays. This fixes incorrect mappings that were based on assumptions rather than verified API data.
+Ensures sensor value translations match the official Digitraffic API definitions and manufacturer documentation, providing accurate road condition, weather status, and sensor diagnostics displays. This fixes incorrect mappings that were based on assumptions rather than verified data.
+
+**Sensors Still Without Documentation:**
+The following sensors have empty `sensorValueDescriptions` in the API and no available manufacturer documentation:
+- PWD_TILA, PWD_NÄK_TILA, PWD_LÄHETTIMEN_TAKAISINSIRONNAN_MUUTOS
+- ASEMAN_STATUS_1/2/OPT1/OPT2, ANTURIVIKA
+- DSC_STAT1/2, DSC_VASTAANOTTIMEN_PUHTAUS1/2
+- OPTISEN_ANTURIN_KELI1/2, OPTISEN_ANTURIN_VAROITUS1/2
+- KUITUVASTE_* (all fiber sensor variants)
+- TIENPINNAN_TILA_* (all road surface state variants - have example mappings but not API-verified)
+- SATEEN_OLOMUOTO_ENNUSTE
+
+Users should monitor actual sensor values in Home Assistant and populate these mappings based on observed codes and corresponding conditions.
 
 **How to find API mappings in the future:**
 1. Access `https://tie.digitraffic.fi/api/weather/v1/sensors`
 2. Search for sensor by name or ID
 3. Look for `sensorValueDescriptions` array containing code-to-description mappings
-4. Note that not all sensors have value descriptions in the API - those remain as empty placeholders for user observation
+4. For sensors without API mappings, consult manufacturer documentation (Vaisala PWD, DSC, etc.)
+5. Note that not all sensors have value descriptions available - those remain as empty placeholders for user observation
 
 ### 2026-01-03 - Documentation Improvements
 **Improved:**
