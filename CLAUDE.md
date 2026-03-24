@@ -1,6 +1,6 @@
 # CLAUDE.md - Digitraffic Home Assistant Integration
 
-**Last Updated:** 2026-01-03 (GitHub Actions CI/CD implementation)
+**Last Updated:** 2026-03-24 (Commit convention for release notes filtering)
 
 ---
 ## ⚠️ CLAUDE CODE: UPDATE CHECKLIST - READ THIS FIRST!
@@ -622,11 +622,29 @@ The repository uses GitHub Actions for automated testing and release management.
 **What it does:**
 1. Determines the next version number (auto-increment or manual)
 2. Updates `manifest.json` with the new version
-3. Generates release notes from commit history
-4. Commits the manifest.json change
+3. Generates release notes from commit history (filtered by commit convention, see below)
+4. Commits the manifest.json change (as `chore: bump version to X.Y.Z`)
 5. Creates a git tag (format: `vX.Y.Z`)
 6. Creates a GitHub release
 7. HACS users see the new version available
+
+**Release Notes Filtering:**
+
+Auto-generated release notes exclude commits with these Conventional Commits prefixes:
+
+| Prefix | Use for | Example |
+|---|---|---|
+| `ci:` | CI/CD workflow changes | `ci: add release workflow` |
+| `docs:` | Documentation only | `docs: update CLAUDE.md` |
+| `chore:` | Maintenance, dependencies | `chore: add .gitignore` |
+| `style:` | Formatting, cosmetic | `style: fix indentation` |
+| `refactor:` | Code restructuring | `refactor: extract helper` |
+| `test:` | Adding or updating tests | `test: add sensor tests` |
+| `build:` | Build system changes | `build: update dependencies` |
+
+Commits **without** a prefix or with `feat:`/`fix:` are **included** in release notes.
+
+The workflow's own version bump commit uses `chore:` prefix so it is automatically excluded.
 
 **Version Management:**
 
@@ -887,6 +905,20 @@ python3 -c "import json; json.load(open('custom_components/digitraffic/manifest.
 
 ## Changelog
 
+### 2026-03-24 - Commit Convention for Release Notes Filtering
+
+**Added:**
+- Conventional Commits-style prefix convention for excluding internal commits from release notes
+- Release workflow filters out commits prefixed with `ci:`, `docs:`, `chore:`, `style:`, `refactor:`, `test:`, `build:`
+- Workflow's own version bump commit now uses `chore:` prefix
+
+**Modified:**
+- `.github/workflows/release.yml`: Updated release notes generation with `grep -vE` filter and `chore:` prefix on version bump commit
+- `CLAUDE.md`: Added "Release Notes Filtering" section and commit message convention
+
+**Purpose:**
+Auto-generated release notes now only include user-facing changes (features and fixes), excluding CI, docs, and maintenance commits.
+
 ### 2026-01-03 - GitHub Actions CI/CD Implementation
 
 **Added:**
@@ -1024,17 +1056,21 @@ Converts cryptic numeric sensor codes to human-readable descriptions (e.g., "63"
 1. Make code changes
 2. Update CLAUDE.md BEFORE committing
 3. Commit both code and documentation together
-4. Reference CLAUDE.md changes in commit message
 
-**Example commit message:**
+**Commit message convention:**
+
+Use Conventional Commits prefixes for internal commits that should be excluded from release notes (see "Release Notes Filtering" above). Feature and fix commits should either use `feat:`/`fix:` prefix or no prefix at all.
+
 ```
+# Included in release notes:
 Add sensor grouping feature
+feat: add sensor grouping feature
+fix: handle timeout in coordinator
 
-- Implement sensor category grouping in sensor.py
-- Add SENSOR_CATEGORIES to const.py
-- Update CLAUDE.md with new architecture and usage
-
-See CLAUDE.md changelog for details.
+# Excluded from release notes:
+docs: update CLAUDE.md
+ci: add release workflow
+chore: add .gitignore
 ```
 
 ### File Format
